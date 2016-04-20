@@ -4,7 +4,7 @@ import (
 	"log"
 	"strings"
 
-	types "github.com/emccode/libstorage/api/types"
+	"github.com/emccode/polly/types"
 )
 
 //SaveSnapshotMetadata This function will save all metadata associated with a volume

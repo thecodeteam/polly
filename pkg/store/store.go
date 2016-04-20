@@ -7,20 +7,23 @@ import (
 	"time"
 
 	gofig "github.com/akutz/gofig"
-	libkv "github.com/docker/libkv"
+	"github.com/docker/libkv"
 	store "github.com/docker/libkv/store"
 	"github.com/docker/libkv/store/boltdb"
 	"github.com/docker/libkv/store/consul"
 	"github.com/docker/libkv/store/etcd"
 	"github.com/docker/libkv/store/zookeeper"
-	"github.com/emccode/libstorage/api/types"
 )
 
 const (
-	//VolumeType self explanatory
+	//VolumeType is used to identify metadata for the libstorage layer
 	VolumeType = 1
 	//SnapshotType self explanatory
 	SnapshotType = 2
+	//VolumeInternalLabelsType is used to identify metadata for the Polly admin layer
+	VolumeInternalLabelsType = 3
+	//VolumeAdminLabelsType is used to identify labels for the Polly admin layer
+	VolumeAdminLabelsType = 4
 )
 
 var (
@@ -39,27 +42,30 @@ type PollyStore struct {
 	root   string
 }
 
-//IPollyStore a representation of the libkv Store
-type IPollyStore interface {
-	StoreType() string
-	Root() string
-	EndPoints() string
-	Bucket() string
-
-	GenerateKey(mytype int, guid string) (path string, err error)
-	GetKeyFromFQKN(fqkn string) (mykey string, err error)
-
-	SaveVolumeMetadata(volume *types.Volume) error
-	GetVolumeMetadata(volume *types.Volume) error
-	DeleteVolumeMetadata(volume *types.Volume) error
-
-	SaveSnapshotMetadata(snapshot *types.Snapshot) error
-	GetSnapshotMetadata(snapshot *types.Snapshot) error
-	DeleteSnapshotMetadata(snapshot *types.Snapshot) error
-}
+// //IPollyStore a representation of the libkv Store
+// type IPollyStore interface {
+// 	StoreType() string
+// 	Root() string
+// 	EndPoints() string
+// 	Bucket() string
+//
+// 	GenerateKey(mytype int, guid string) (path string, err error)
+// 	GetKeyFromFQKN(fqkn string) (mykey string, err error)
+//
+// 	SaveVolumeMetadata(volume *types.Volume) error
+// 	GetVolumeMetadata(volume *types.Volume) error
+// 	DeleteVolumeMetadata(volume *types.Volume) error
+// 	// SaveVolumeMetadata(volume *types.Volume) error
+// 	// GetVolumeMetadata(volume *types.Volume) error
+// 	// DeleteVolumeMetadata(volume *types.Volume) error
+//
+// 	SaveSnapshotMetadata(snapshot *types.Snapshot) error
+// 	GetSnapshotMetadata(snapshot *types.Snapshot) error
+// 	DeleteSnapshotMetadata(snapshot *types.Snapshot) error
+// }
 
 //NewWithConfig This initializes new instance of this library
-func NewWithConfig(config gofig.Config) (pollystore IPollyStore, err error) {
+func NewWithConfig(config gofig.Config) (pollystore *PollyStore, err error) {
 	cfg := store.Config{
 		ConnectionTimeout: 10 * time.Second,
 	}
@@ -94,22 +100,53 @@ func NewWithConfig(config gofig.Config) (pollystore IPollyStore, err error) {
 		log.Fatal("Fatal: ", err)
 		return nil, err
 	}
-
 	ps.store = myStore
+
+	initlist := []int{VolumeType, VolumeInternalLabelsType, VolumeAdminLabelsType}
+	for _, category := range initlist {
+		key, err := ps.GenerateKey(category, "")
+		if err != nil {
+			log.Fatal("failed key gen on store init", err)
+			return nil, err
+		}
+		ps.store.Put(key, []byte(""), nil)
+	}
 
 	return ps, nil
 }
 
 //GenerateKey generates the internal path (=key) for persisting a value
 func (ps *PollyStore) GenerateKey(mytype int, guid string) (path string, err error) {
-	switch mytype {
-	case VolumeType:
-		return ps.Root() + "volume/" + guid + "/", nil
-	case SnapshotType:
-		return ps.Root() + "snapshot/" + guid + "/", nil
+	var parts = make([]string, 0, 3)
+
+	root := ps.Root()
+	if len(root) > 0 {
+		parts = append(parts, root)
 	}
 
-	return "", ErrObjectInvalid
+	switch mytype {
+	case VolumeType:
+		parts = append(parts, "volumelibstorage")
+	case SnapshotType:
+		parts = append(parts, "snapshot")
+	case VolumeInternalLabelsType:
+		parts = append(parts, "volumeinternal")
+	case VolumeAdminLabelsType:
+		parts = append(parts, "volumeadmin")
+	default:
+		return "", ErrObjectInvalid
+	}
+
+	if len(guid) > 0 {
+		guid = strings.TrimSpace(guid)
+		guid = strings.Trim(guid, "/") // don't allow slash in keys
+		parts = append(parts, guid)
+	}
+
+	path = strings.Join(parts, "/")
+	path = store.Normalize(path)
+	path += "/"
+	return
 }
 
 //GetKeyFromFQKN get the key name from the FQKN
