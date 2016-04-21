@@ -1,0 +1,28 @@
+{
+   "package": {
+        "name": "unstable",
+        "repo": "polly",
+        "subject": "emccode"
+    },
+
+    "version": {
+        "name": "${SEMVER}",
+        "desc": "${DSCRIP}",
+        "released": "${RELDTE}",
+        "gpgSign": false
+    },
+
+    "files": [
+        {
+            "includePattern": ".build/deploy/(.+)/(.*\.tar\.gz)",
+            "excludePattern": ".build/deploy/latest/(.*)",
+            "uploadPattern": "unstable/${SEMVER}/$2"
+        },
+        {
+            "includePattern": ".build/deploy/latest/(.*)",
+            "uploadPattern": "unstable/latest/$1"
+        }
+    ],
+
+    "publish": true
+}
