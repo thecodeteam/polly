@@ -1,5 +1,22 @@
 package: github.com/emccode/polly
 import:
+  - package: github.com/Sirupsen/logrus
+    ref:     feature/logrus-aware-types
+    repo:    https://github.com/akutz/logrus
+    vcs:     git
+  - package: github.com/akutz/gofig
+  - package: github.com/akutz/gotil
+  - package: github.com/akutz/goof
+  - package: github.com/akutz/golf
+  - package: github.com/blang/semver
+    ref:     v3.0.1
+    vcs:     git
+  - package: github.com/cesanta/validate-json
+  - package: github.com/stretchr/testify
+  - package: github.com/emccode/libstorage
+    ref:     3b2fe6aca99fac214e3c083aa53313fa305bee8e
+    vcs:     git
+    repo:    https://github.com/clintonskitson/libstorage
   - package: github.com/docker/libkv
     vcs:     git
   - package: github.com/boltdb/bolt
