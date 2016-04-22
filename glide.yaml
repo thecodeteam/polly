@@ -5,3 +5,4 @@ import:
   - package: github.com/boltdb/bolt
   - package: github.com/coreos/etcd/client
   - package: github.com/samuel/go-zookeeper/zk
+  - package: github.com/stretchr/testify
