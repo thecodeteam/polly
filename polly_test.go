@@ -1,4 +1,4 @@
-package main
+package polly
 
 import (
 	"bytes"

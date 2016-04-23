@@ -1,4 +1,4 @@
-package main
+package polly
 
 import (
 	"log"
@@ -7,20 +7,42 @@ import (
 	core "github.com/emccode/polly/core"
 )
 
-var pollyCore *core.PollyCore
-
-func main() {
+//New init the lib
+func New() (p *core.PollyCore, err error) {
 	config := gofig.New()
 
-	if err := config.ReadConfigFile("/etc/polly/config.yml"); err != nil {
-		panic(err)
+	myErr := config.ReadConfigFile("/etc/polly/config.yml")
+	if myErr != nil {
+		log.Fatal("Fatal: ", myErr)
+		return nil, myErr
 	}
 
-	var err error
-	pollyCore, err = core.NewWithConfig(config)
-	if err != nil {
-		log.Fatal("Fatal: ", err)
+	pollyCore, myErr := core.NewWithConfig(config)
+	if myErr != nil {
+		log.Fatal("Fatal: ", myErr)
+		return nil, myErr
 	}
 	log.Print("PollyStore Type: ", pollyCore.PollyStore.StoreType())
 
+	return pollyCore, nil
+}
+
+//NewWithConfigFile init the lib
+func NewWithConfigFile(path string) (p *core.PollyCore, err error) {
+	config := gofig.New()
+
+	myErr := config.ReadConfigFile(path)
+	if myErr != nil {
+		log.Fatal("Fatal: ", myErr)
+		return nil, myErr
+	}
+
+	pollyCore, myErr := core.NewWithConfig(config)
+	if myErr != nil {
+		log.Fatal("Fatal: ", myErr)
+		return nil, myErr
+	}
+	log.Print("PollyStore Type: ", pollyCore.PollyStore.StoreType())
+
+	return pollyCore, nil
 }
