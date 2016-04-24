@@ -264,8 +264,7 @@ func (ps *PollyStore) SetVolumeAdminLabels(volume *types.Volume) error {
 
 //SetVolumeMetadata This function will get all metadata associated with a volume
 func (ps *PollyStore) SetVolumeMetadata(volume *types.Volume) error {
-	err := ps.SetVolumeFields(volume)
-	if err != nil {
+	if err := ps.SetVolumeFields(volume); err != nil {
 		log.Fatal("Failed to retrieve volume fields from persistent store")
 	}
 

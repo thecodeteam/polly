@@ -42,28 +42,6 @@ type PollyStore struct {
 	root   string
 }
 
-// //IPollyStore a representation of the libkv Store
-// type IPollyStore interface {
-// 	StoreType() string
-// 	Root() string
-// 	EndPoints() string
-// 	Bucket() string
-//
-// 	GenerateKey(mytype int, guid string) (path string, err error)
-// 	GetKeyFromFQKN(fqkn string) (mykey string, err error)
-//
-// 	SaveVolumeMetadata(volume *types.Volume) error
-// 	GetVolumeMetadata(volume *types.Volume) error
-// 	DeleteVolumeMetadata(volume *types.Volume) error
-// 	// SaveVolumeMetadata(volume *types.Volume) error
-// 	// GetVolumeMetadata(volume *types.Volume) error
-// 	// DeleteVolumeMetadata(volume *types.Volume) error
-//
-// 	SaveSnapshotMetadata(snapshot *types.Snapshot) error
-// 	GetSnapshotMetadata(snapshot *types.Snapshot) error
-// 	DeleteSnapshotMetadata(snapshot *types.Snapshot) error
-// }
-
 //NewWithConfig This initializes new instance of this library
 func NewWithConfig(config gofig.Config) (pollystore *PollyStore, err error) {
 	cfg := store.Config{

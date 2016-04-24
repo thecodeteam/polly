@@ -13,6 +13,9 @@ import (
 	lstypes "github.com/emccode/libstorage/api/types"
 	apihttp "github.com/emccode/libstorage/api/types/http"
 	core "github.com/emccode/polly/core"
+	"github.com/emccode/polly/pkg/store"
+
+	lsclient "github.com/emccode/libstorage/client"
 	"github.com/emccode/polly/types"
 	"github.com/gorilla/mux"
 )
@@ -136,7 +139,7 @@ func getVolumesHandler(w http.ResponseWriter, r *http.Request) {
 	// note that libstorage returns a limited amount of metadata for each volume
 	// Polly augments the per volume metatdata with items retained in the Polly
 	// persistent store
-	serviceVolumeMap, err := lsClient.Volumes()
+	serviceVolumeMap, err := lsClient.Volumes(false)
 	if err != nil {
 		http.Error(w, "could not retrieve volume map",
 			http.StatusInternalServerError)
@@ -275,7 +278,20 @@ func deleteVolumesHandler(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
+var services apihttp.ServicesMap
+var lsClient lsclient.Client
+var ps *store.PollyStore
+
 func main() {
+	cfg, err := startServer()
+	if err != nil {
+		panic(err)
+	}
+
+	if err := startClient(cfg); err != nil {
+		panic(err)
+	}
+
 	r := mux.NewRouter()
 	//volumes
 	r.HandleFunc("/admin/volumes", getVolumesHandler).Methods("GET")
@@ -285,22 +301,10 @@ func main() {
 	http.Handle("/", r)
 	go http.ListenAndServe(":8080", nil)
 
-	server, errs := startServer()
-
-	if server == nil {
-		fmt.Print("server == nil\n")
-	}
-
-	if err := startClient(); err != nil {
-		server.Close()
-		panic(err)
-	}
-
 	// iterate over all volumes from libstorage
 	// if any are missing from the Polly store, add them now, with scheduler id = "UNCLAIMED"
-	serviceVolumeMap, err := lsClient.Volumes()
+	serviceVolumeMap, err := lsClient.Volumes(false)
 	if err != nil {
-		server.Close()
 		panic(err)
 	}
 
@@ -317,7 +321,6 @@ func main() {
 			}
 			exists, err := ps.Exists(vol)
 			if err != nil {
-				server.Close()
 				panic(err)
 			}
 			if !exists {
@@ -348,15 +351,6 @@ func main() {
 	}
 	j, _ := json.Marshal(&Volumes)
 	fmt.Println("volumes=", string(j))
-
-	go func(errs <-chan error) {
-		err := <-errs
-		if err != nil {
-			server.Close()
-			fmt.Print("server error: ", err)
-			// todo should trigger a syscall to shut down
-		}
-	}(errs)
 
 	forever := make(chan bool)
 	<-forever
