@@ -4,12 +4,12 @@ import (
 	"log"
 	"strings"
 
-	types "github.com/emccode/libstorage/api/types"
+	"github.com/emccode/polly/api/types"
 )
 
-//SaveVolumeMetadata This function will save all metadata associated with a volume
-func (ps *PollyStore) SaveVolumeMetadata(volume *types.Volume) error {
-	key, err := ps.GenerateKey(VolumeType, volume.ID)
+//SaveSnapshotMetadata This function will save all metadata associated with a volume
+func (ps *PollyStore) SaveSnapshotMetadata(snapshot *types.Snapshot) error {
+	key, err := ps.GenerateKey(SnapshotType, snapshot.ID)
 	if err != nil {
 		log.Fatal(err)
 		return err
@@ -21,7 +21,7 @@ func (ps *PollyStore) SaveVolumeMetadata(volume *types.Volume) error {
 	if kvpairs != nil {
 		//delete keys that are gone...
 		for _, pair := range kvpairs {
-			for _, vkey := range volume.Fields {
+			for _, vkey := range snapshot.Fields {
 				found := false
 				if strings.Compare(pair.Key, key+vkey) == 0 {
 					found = true
@@ -33,9 +33,8 @@ func (ps *PollyStore) SaveVolumeMetadata(volume *types.Volume) error {
 		}
 	}
 
-	//new and existing keys will be added here
-	for volKey, volValue := range volume.Fields {
-		err := ps.store.Put(key+volKey, []byte(volValue), nil)
+	for snapKey, snapValue := range snapshot.Fields {
+		err := ps.store.Put(key+snapKey, []byte(snapValue), nil)
 		if err != nil {
 			log.Fatal("Fatal: ", err)
 			return err
@@ -45,9 +44,9 @@ func (ps *PollyStore) SaveVolumeMetadata(volume *types.Volume) error {
 	return nil
 }
 
-//GetVolumeMetadata This function will get all metadata associated with a volume
-func (ps *PollyStore) GetVolumeMetadata(volume *types.Volume) error {
-	key, err := ps.GenerateKey(VolumeType, volume.ID)
+//GetSnapshotMetadata This function will get all metadata associated with a volume
+func (ps *PollyStore) GetSnapshotMetadata(snapshot *types.Snapshot) error {
+	key, err := ps.GenerateKey(SnapshotType, snapshot.ID)
 	if err != nil {
 		log.Fatal(err)
 		return err
@@ -60,22 +59,22 @@ func (ps *PollyStore) GetVolumeMetadata(volume *types.Volume) error {
 		return err
 	}
 
-	volume.Fields = make(map[string]string)
+	snapshot.Fields = make(map[string]string)
 	for _, pair := range kvpairs {
 		key, err := ps.GetKeyFromFQKN(pair.Key)
 		if err != nil {
 			log.Fatal("Invalid key format.")
 			continue
 		}
-		volume.Fields[key] = string(pair.Value)
+		snapshot.Fields[key] = string(pair.Value)
 	}
 
 	return nil
 }
 
-//DeleteVolumeMetadata This function will save all metadata associated with a volume
-func (ps *PollyStore) DeleteVolumeMetadata(volume *types.Volume) error {
-	key, err := ps.GenerateKey(VolumeType, volume.ID)
+//DeleteSnapshotMetadata This function will save all metadata associated with a volume
+func (ps *PollyStore) DeleteSnapshotMetadata(snapshot *types.Snapshot) error {
+	key, err := ps.GenerateKey(SnapshotType, snapshot.ID)
 	if err != nil {
 		log.Fatal(err)
 		return err
