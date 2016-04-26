@@ -12,6 +12,5 @@ package test
 
 import (
 	// loads the packages to alleviate test warnings about no depdencies
-	_ "github.com/emccode/polly"
 	_ "github.com/emccode/polly/core"
 )

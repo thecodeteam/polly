@@ -48,7 +48,7 @@ func NewWithConfig(config gofig.Config) (pollystore *PollyStore, err error) {
 		ConnectionTimeout: 10 * time.Second,
 	}
 
-	ps := new(PollyStore)
+	ps := &PollyStore{}
 	ps.config = config
 	ps.root = "polly/"
 

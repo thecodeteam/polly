@@ -8,7 +8,7 @@ import (
 
 	gofig "github.com/akutz/gofig"
 	lstypes "github.com/emccode/libstorage/api/types"
-	ptypes "github.com/emccode/polly/types"
+	ptypes "github.com/emccode/polly/api/types"
 )
 
 const (

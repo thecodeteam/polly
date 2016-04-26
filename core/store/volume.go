@@ -1,26 +1,23 @@
 package store
 
 import (
-	"fmt"
-	"log"
 	"strconv"
 	"strings"
 
+	log "github.com/Sirupsen/logrus"
+	"github.com/akutz/goof"
 	store "github.com/docker/libkv/store"
-	"github.com/emccode/polly/types"
+	"github.com/emccode/polly/api/types"
 )
 
 // Exists returns true if a key for the specified Volume exists in the store
 func (ps *PollyStore) Exists(volume *types.Volume) (bool, error) {
 	key, err := ps.GenerateKey(VolumeInternalLabelsType, volume.ID)
 	if err != nil {
-		log.Fatal(err)
 		return false, err
 	}
-	fmt.Println("checking", key)
-	exists, err := ps.store.Exists(key)
-	fmt.Println(key, "exists=", exists, "err=", err)
-	return exists, err
+
+	return ps.store.Exists(key)
 }
 
 //GetVolumeIds return an array of IDs for all volumes in the store
@@ -28,14 +25,12 @@ func (ps *PollyStore) GetVolumeIds() (ids []string, err error) {
 
 	key, err := ps.GenerateKey(VolumeInternalLabelsType, "")
 	if err != nil {
-		log.Fatal("Generate key failed", err)
-		return ids, err
+		return nil, err
 	}
 
 	kvpairs, err := ps.store.List(key)
 	if err != nil {
-		log.Fatal("List key failed ", key, err)
-		return
+		return nil, err
 	}
 
 	for _, pair := range kvpairs {
@@ -51,7 +46,6 @@ func (ps *PollyStore) GetVolumeIds() (ids []string, err error) {
 func (ps *PollyStore) SaveVolumeFields(volume *types.Volume) error {
 	key, err := ps.GenerateKey(VolumeType, volume.ID)
 	if err != nil {
-		log.Fatal(err)
 		return err
 	}
 
@@ -77,10 +71,12 @@ func (ps *PollyStore) SaveVolumeFields(volume *types.Volume) error {
 
 	//new and existing keys will be added here
 	for volKey, volValue := range volume.Fields {
-		fmt.Println("write ", key+volKey, "=", volValue)
+		log.WithFields(log.Fields{
+			"key":      key,
+			"volKey":   volKey,
+			"volValue": volValue}).Info("write kv")
 		err := ps.store.Put(key+volKey, []byte(volValue), nil)
 		if err != nil {
-			log.Fatal("Fatal: ", err)
 			return err
 		}
 	}
@@ -92,7 +88,6 @@ func (ps *PollyStore) SaveVolumeFields(volume *types.Volume) error {
 func (ps *PollyStore) SaveVolumeAdminLabels(volume *types.Volume) error {
 	key, err := ps.GenerateKey(VolumeAdminLabelsType, volume.ID)
 	if err != nil {
-		log.Fatal(err)
 		return err
 	}
 
@@ -119,7 +114,6 @@ func (ps *PollyStore) SaveVolumeAdminLabels(volume *types.Volume) error {
 	for volKey, volValue := range volume.Labels {
 		err := ps.store.Put(key+volKey, []byte(volValue), nil)
 		if err != nil {
-			log.Fatal("Fatal: ", err)
 			return err
 		}
 	}
@@ -135,70 +129,63 @@ func (ps *PollyStore) SaveVolumeMetadata(volume *types.Volume) error {
 		return err
 	}
 
-	fmt.Println("write ", key+"AvailabilityZone", "=", volume.AvailabilityZone)
+	log.WithFields(log.Fields{
+		"vol":   volume,
+		"lsvol": volume.Volume,
+		"key":   key}).Info("save volume metadata")
 
 	err = ps.store.Put(key+"AvailabilityZone", []byte(volume.AvailabilityZone),
 		nil)
 	if err != nil {
-		log.Fatal("Fatal: ", err)
 		return err
 	}
 	err = ps.store.Put(key+"ID", []byte(volume.ID), nil)
 	if err != nil {
-		log.Fatal("Fatal: ", err)
 		return err
 	}
 	err = ps.store.Put(key+"IOPS", []byte(strconv.FormatInt(volume.IOPS, 10)),
 		nil)
 	if err != nil {
-		log.Fatal("Fatal: ", err)
 		return err
 	}
 	err = ps.store.Put(key+"NetworkName", []byte(volume.NetworkName), nil)
 	if err != nil {
-		log.Fatal("Fatal: ", err)
 		return err
 	}
 	err = ps.store.Put(key+"Scheduler", []byte(volume.Scheduler), nil)
 	if err != nil {
-		log.Fatal("Fatal: ", err)
 		return err
 	}
 	err = ps.store.Put(key+"ServiceName", []byte(volume.ServiceName), nil)
 	if err != nil {
-		log.Fatal("Fatal: ", err)
 		return err
 	}
 	err = ps.store.Put(key+"Size", []byte(strconv.FormatInt(volume.Size, 10)),
 		nil)
 	if err != nil {
-		log.Fatal("Fatal: ", err)
 		return err
 	}
 	err = ps.store.Put(key+"Status", []byte(volume.Status), nil)
 	if err != nil {
-		log.Fatal("Fatal: ", err)
 		return err
 	}
 	err = ps.store.Put(key+"StorageProviderName",
 		[]byte(volume.StorageProviderName), nil)
 	if err != nil {
-		log.Fatal("Fatal: ", err)
 		return err
 	}
 	err = ps.store.Put(key+"Type", []byte(volume.Type), nil)
 	if err != nil {
-		log.Fatal("Fatal: ", err)
 		return err
 	}
 
 	err = ps.SaveVolumeFields(volume)
 	if err != nil {
-		log.Fatal("Failed to save fields")
+		return goof.New("failed to save fields")
 	}
 	err = ps.SaveVolumeAdminLabels(volume)
 	if err != nil {
-		log.Fatal("Failed to save fields")
+		return goof.New("failed to save fields")
 	}
 
 	return nil
@@ -223,7 +210,7 @@ func (ps *PollyStore) SetVolumeFields(volume *types.Volume) error {
 	for _, pair := range kvpairs {
 		key, err := ps.GetKeyFromFQKN(pair.Key)
 		if err != nil {
-			log.Fatal("Invalid key format.")
+			log.Error("invalid key format")
 			continue
 		}
 		volume.Fields[key] = string(pair.Value)
@@ -236,7 +223,6 @@ func (ps *PollyStore) SetVolumeFields(volume *types.Volume) error {
 func (ps *PollyStore) SetVolumeAdminLabels(volume *types.Volume) error {
 	key, err := ps.GenerateKey(VolumeAdminLabelsType, volume.ID)
 	if err != nil {
-		log.Fatal(err)
 		return err
 	}
 
@@ -245,15 +231,13 @@ func (ps *PollyStore) SetVolumeAdminLabels(volume *types.Volume) error {
 		ps.store.Put(key, []byte(""), nil) // make empty list in store
 		return nil
 	} else if err != nil {
-		log.Fatal(err)
 		return err
 	}
-	fmt.Println("got List of", len(kvpairs))
+
 	volume.Labels = make(map[string]string)
 	for _, pair := range kvpairs {
 		key, err := ps.GetKeyFromFQKN(pair.Key)
 		if err != nil {
-			log.Fatal("Invalid key format.")
 			continue
 		}
 		volume.Labels[key] = string(pair.Value)
@@ -265,26 +249,23 @@ func (ps *PollyStore) SetVolumeAdminLabels(volume *types.Volume) error {
 //SetVolumeMetadata This function will get all metadata associated with a volume
 func (ps *PollyStore) SetVolumeMetadata(volume *types.Volume) error {
 	if err := ps.SetVolumeFields(volume); err != nil {
-		log.Fatal("Failed to retrieve volume fields from persistent store")
+		return goof.New("Failed to retrieve volume fields from persistent store")
 	}
 
 	key, err := ps.GenerateKey(VolumeInternalLabelsType, volume.ID)
 	if err != nil {
-		log.Fatal(err)
 		return err
 	}
 
 	//current keys in libkv
 	kvpairs, err := ps.store.List(key)
 	if err != nil {
-		log.Fatal(err)
 		return err
 	}
 
 	for _, pair := range kvpairs {
 		key, err := ps.GetKeyFromFQKN(pair.Key)
 		if err != nil {
-			log.Fatal("Invalid key format.")
 			continue
 		}
 		switch key {
@@ -319,7 +300,7 @@ func (ps *PollyStore) SetVolumeMetadata(volume *types.Volume) error {
 
 	err = ps.SetVolumeAdminLabels(volume)
 	if err != nil {
-		log.Fatal("Failed to retrieve volume labels from persistent store")
+		return goof.New("Failed to retrieve volume labels from persistent store")
 	}
 	return nil
 }
@@ -336,7 +317,6 @@ func (ps *PollyStore) DeleteVolumeMetadata(volume *types.Volume) error {
 
 		err = ps.store.DeleteTree(key)
 		if err != nil {
-			log.Fatal("Fatal: ", err)
 			return err
 		}
 	}
