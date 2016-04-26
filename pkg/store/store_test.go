@@ -7,7 +7,8 @@ import (
 	"testing"
 
 	gofig "github.com/akutz/gofig"
-	types "github.com/emccode/libstorage/api/types"
+	lstypes "github.com/emccode/libstorage/api/types"
+	ptypes "github.com/emccode/polly/types"
 )
 
 const (
@@ -26,6 +27,15 @@ polly:
 `
 )
 
+func newVolume(ID string) *ptypes.Volume {
+	v := &ptypes.Volume{
+		Volume: &lstypes.Volume{
+			ID: ID,
+		},
+	}
+	return v
+}
+
 func TestSaveData(t *testing.T) {
 	config := gofig.New()
 
@@ -40,22 +50,22 @@ func TestSaveData(t *testing.T) {
 	}
 
 	//save
-	volume1 := types.Volume{ID: "myid1"}
+	volume1 := newVolume("myid1")
 	volume1.Fields = make(map[string]string)
 	volume1.Fields["mykey1"] = "myvalue1"
 	volume1.Fields["mykey2"] = "myvalue2"
 
-	err = ps.SaveVolumeMetadata(&volume1)
+	err = ps.SaveVolumeMetadata(volume1)
 	if err != nil {
 		log.Fatal("Failed to save metadata")
 	}
 
 	//get
-	volume2 := types.Volume{ID: "myid1"}
+	volume2 := newVolume("myid1")
 	volume2.Fields = make(map[string]string)
-	err = ps.GetVolumeMetadata(&volume2)
+	err = ps.SetVolumeMetadata(volume2)
 	if err != nil {
-		log.Fatal("Failed to save metadata")
+		log.Fatal("Failed to retrieve metadata")
 	}
 
 	log.Print("After GET")
@@ -66,7 +76,7 @@ func TestSaveData(t *testing.T) {
 	//update
 	volume2.Fields["mykey1"] = "myvalue3"
 
-	err = ps.SaveVolumeMetadata(&volume2)
+	err = ps.SaveVolumeMetadata(volume2)
 	if err != nil {
 		log.Fatal("Failed to save metadata")
 	}
@@ -80,7 +90,7 @@ func TestSaveData(t *testing.T) {
 	volume2.Fields = make(map[string]string)
 	volume2.Fields["mykey1"] = "myvalue3"
 
-	err = ps.SaveVolumeMetadata(&volume2)
+	err = ps.SaveVolumeMetadata(volume2)
 	if err != nil {
 		log.Fatal("Failed to save metadata")
 	}
@@ -91,7 +101,7 @@ func TestSaveData(t *testing.T) {
 	}
 
 	//delete all metadata
-	err = ps.DeleteVolumeMetadata(&volume2)
+	err = ps.DeleteVolumeMetadata(volume2)
 	if err != nil {
 		log.Fatal("Failed to save metadata")
 	}
