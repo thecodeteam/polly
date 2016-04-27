@@ -1,0 +1,11 @@
+{
+  "name": "polly-ui",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "start": "ws"
+  },
+  "dependencies": {
+    "local-web-server": "^1.2.2"
+  }
+}

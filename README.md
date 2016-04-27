@@ -42,3 +42,11 @@ Storage platforms:
  - EMC Isilon
  - OpenStack Cinder
  - VirtualBox
+
+## GUI
+
+1. Clone this repo
+2. from the `gui` folder type: `npm install && npm start`
+3. Go to `http://localhost:8000/volumes.html`
+
+There may be problems with CORS on the server-side function. For now, enable COORS on your browser. [Chrome CORS Extension](https://chrome.google.com/webstore/detail/allow-control-allow-origi/nlfbmbojpeacfghkpbjhddihlkkiljbi?hl=en)

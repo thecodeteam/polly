@@ -2,3 +2,5 @@
 glide.lock
 vendor/
 .build/
+node_modules/
+npm-debug.log
