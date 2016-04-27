@@ -1,6 +1,5 @@
 package: github.com/emccode/polly
 import:
-  - package: github.com/jteeuwen/go-bindata
   - package: github.com/Sirupsen/logrus
     ref:     feature/logrus-aware-types
     repo:    https://github.com/akutz/logrus

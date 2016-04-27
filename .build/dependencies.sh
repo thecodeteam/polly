@@ -14,6 +14,7 @@ go get -v github.com/onsi/ginkgo
 go get -v github.com/axw/gocov/gocov
 go get -v github.com/mattn/goveralls
 go get -v golang.org/x/tools/cmd/cover
+go get -v github.com/jteeuwen/go-bindata
 
 # the remaining steps are specific to linux
 if [[ $(uname -s) != Linux ]]; then exit 0; fi
