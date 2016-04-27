@@ -2,12 +2,18 @@
 
 ![polly](docs/images/Polly the Parrot_Containers.png)
 
-## Storage scheduling for container runtimes
+## Release 0.1 (05/01/2016)
+Polly is still considered work in progress. We will have a first release shortly.
 
+## Storage scheduling for container runtimes
 Polly implements a centralized storage scheduling service that will work with popular container schedulers of different application platforms for containerized workloads. Polly is an open source platform that supports use of external storage, with scheduled containerized workloads, at scale. It can be used for creating, mapping, snapshotting and deleting persistent data volumes on a multitude of storage platforms.
 
-## What it does
+## Key Features
+- Centralized control and distribution of storage resources
+- Offer based mechanism for advertising storage to container schedulers
+- Framework supporting direct integration to any container scheduler, storage orchestrator, and storage platform
 
+## What it does
 Container runtime schedulers need to be integrated with every aspect of available hardware resources, including persistent storage. When requesting resources for an application the scheduler gets offers for CPU, RAM _and_ disk.
 
 To be able to offer persistent storage for applications the scheduler needs to know about the underlying storage infrastructure. Having separate modules for every type of storage infrastructure is inefficient, and that is why Polly exists. It creates an abstraction layer to support multiple storage infrastructure layers for multiple containers runtime schedulers.
