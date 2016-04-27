@@ -313,7 +313,7 @@ _install: _deps _fmt
 			FILE=$(GOPATH)/bin/polly; \
 			BYTES=$$($(STAT_FILE_SIZE)); \
 			SIZE=$$(($$BYTES / 1024 / 1024)); \
-			printf "\nThe REX-Ray binary is $${SIZE}MB and located at:\n\n"; \
+			printf "\nThe Polly binary is $${SIZE}MB and located at:\n\n"; \
 			printf "  $$FILE\n\n"; \
 		fi
 
@@ -390,7 +390,7 @@ rpm:
 			cp -f $$FILE $(DEPLOY)/latest/polly-latest-$(V_ARCH).rpm; \
 			BYTES=$$($(STAT_FILE_SIZE)); \
 			SIZE=$$(($$BYTES / 1024 / 1024)); \
-			printf "\nThe REX-Ray RPM is $${SIZE}MB and located at:\n\n"; \
+			printf "\nThe Polly RPM is $${SIZE}MB and located at:\n\n"; \
 			printf "  $$FILE\n\n"; \
 		fi
 
@@ -420,7 +420,7 @@ deb:
 			cp -f $$FILE $(DEPLOY)/latest/polly-latest-$(V_ARCH).deb; \
 			BYTES=$$($(STAT_FILE_SIZE)); \
 			SIZE=$$(($$BYTES / 1024 / 1024)); \
-			printf "\nThe REX-Ray DEB is $${SIZE}MB and located at:\n\n"; \
+			printf "\nThe Polly DEB is $${SIZE}MB and located at:\n\n"; \
 			printf "  $$FILE\n\n"; \
 		fi
 
