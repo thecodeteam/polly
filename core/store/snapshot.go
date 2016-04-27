@@ -1,7 +1,7 @@
 package store
 
 import (
-	"log"
+	// log "github.com/Sirupsen/logrus"
 	"strings"
 
 	"github.com/emccode/polly/api/types"
@@ -9,14 +9,13 @@ import (
 
 //SaveSnapshotMetadata This function will save all metadata associated with a volume
 func (ps *PollyStore) SaveSnapshotMetadata(snapshot *types.Snapshot) error {
-	key, err := ps.GenerateKey(SnapshotType, snapshot.ID)
+	key, err := ps.GenerateObjectKey(SnapshotType, snapshot.SnapshotID)
 	if err != nil {
-		log.Fatal(err)
 		return err
 	}
 
 	//current keys in libkv
-	kvpairs, _ := ps.store.List(key)
+	kvpairs, _ := ps.List(key)
 
 	if kvpairs != nil {
 		//delete keys that are gone...
@@ -36,7 +35,6 @@ func (ps *PollyStore) SaveSnapshotMetadata(snapshot *types.Snapshot) error {
 	for snapKey, snapValue := range snapshot.Fields {
 		err := ps.store.Put(key+snapKey, []byte(snapValue), nil)
 		if err != nil {
-			log.Fatal("Fatal: ", err)
 			return err
 		}
 	}
@@ -46,16 +44,14 @@ func (ps *PollyStore) SaveSnapshotMetadata(snapshot *types.Snapshot) error {
 
 //GetSnapshotMetadata This function will get all metadata associated with a volume
 func (ps *PollyStore) GetSnapshotMetadata(snapshot *types.Snapshot) error {
-	key, err := ps.GenerateKey(SnapshotType, snapshot.ID)
+	key, err := ps.GenerateObjectKey(SnapshotType, snapshot.SnapshotID)
 	if err != nil {
-		log.Fatal(err)
 		return err
 	}
 
 	//current keys in libkv
-	kvpairs, err := ps.store.List(key)
+	kvpairs, err := ps.List(key)
 	if err != nil {
-		log.Fatal(err)
 		return err
 	}
 
@@ -63,7 +59,6 @@ func (ps *PollyStore) GetSnapshotMetadata(snapshot *types.Snapshot) error {
 	for _, pair := range kvpairs {
 		key, err := ps.GetKeyFromFQKN(pair.Key)
 		if err != nil {
-			log.Fatal("Invalid key format.")
 			continue
 		}
 		snapshot.Fields[key] = string(pair.Value)
@@ -74,15 +69,13 @@ func (ps *PollyStore) GetSnapshotMetadata(snapshot *types.Snapshot) error {
 
 //DeleteSnapshotMetadata This function will save all metadata associated with a volume
 func (ps *PollyStore) DeleteSnapshotMetadata(snapshot *types.Snapshot) error {
-	key, err := ps.GenerateKey(SnapshotType, snapshot.ID)
+	key, err := ps.GenerateObjectKey(SnapshotType, snapshot.SnapshotID)
 	if err != nil {
-		log.Fatal(err)
 		return err
 	}
 
 	err = ps.store.DeleteTree(key)
 	if err != nil {
-		log.Fatal("Fatal: ", err)
 		return err
 	}
 

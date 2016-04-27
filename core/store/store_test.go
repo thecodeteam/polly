@@ -2,13 +2,16 @@ package store
 
 import (
 	"bytes"
-	"log"
+	log "github.com/Sirupsen/logrus"
 
 	"testing"
 
 	gofig "github.com/akutz/gofig"
 	lstypes "github.com/emccode/libstorage/api/types"
-	ptypes "github.com/emccode/polly/api/types"
+	"github.com/emccode/polly/api/types"
+	lsclient "github.com/emccode/polly/core/libstorage/client"
+	"github.com/stretchr/testify/assert"
+	"os"
 )
 
 const (
@@ -27,16 +30,18 @@ polly:
 `
 )
 
-func newVolume(ID string) *ptypes.Volume {
-	v := &ptypes.Volume{
-		Volume: &lstypes.Volume{
-			ID: ID,
-		},
+var ps *PollyStore
+
+func newVolume(service, volumeID string) *types.Volume {
+	lsvol := &lstypes.Volume{
+		ID: volumeID,
 	}
-	return v
+	return lsclient.NewVolume(lsvol, service)
 }
 
-func TestSaveData(t *testing.T) {
+func TestMain(m *testing.M) {
+	log.SetLevel(log.DebugLevel)
+	os.Setenv("POLLY_DEBUG", "true")
 	config := gofig.New()
 
 	configYamlBuf := []byte(libStorageConfigBaseBolt)
@@ -44,65 +49,128 @@ func TestSaveData(t *testing.T) {
 		panic(err)
 	}
 
-	ps, err := NewWithConfig(config.Scope("polly.store"))
+	var err error
+	ps, err = NewWithConfig(config.Scope("polly.store"))
 	if err != nil {
 		log.Fatal("Failed to create PollyStore")
 	}
 
-	//save
-	volume1 := newVolume("myid1")
-	volume1.Fields = make(map[string]string)
-	volume1.Fields["mykey1"] = "myvalue1"
-	volume1.Fields["mykey2"] = "myvalue2"
+	vol := newVolume("pollytestpkg1", "testid1")
+	_ = ps.RemoveVolumeMetadata(vol)
 
-	err = ps.SaveVolumeMetadata(volume1)
-	if err != nil {
-		log.Fatal("Failed to save metadata")
-	}
+	m.Run()
+}
 
-	//get
-	volume2 := newVolume("myid1")
-	volume2.Fields = make(map[string]string)
-	err = ps.SetVolumeMetadata(volume2)
-	if err != nil {
-		log.Fatal("Failed to retrieve metadata")
-	}
+func TestGenerateRootKey(t *testing.T) {
+	key, err := ps.GenerateRootKey(VolumeInternalLabelsType)
+	assert.NoError(t, err)
+	assert.Equal(t, "/volumeinternal/", key)
+}
 
-	log.Print("After GET")
-	for key, value := range volume2.Fields {
-		log.Print(key, " = ", value)
-	}
+func TestGenerateObjectKey(t *testing.T) {
+	key, err := ps.GenerateObjectKey(VolumeInternalLabelsType, "pollytestpkg1-testid1")
+	assert.NoError(t, err)
+	assert.Equal(t, "/volumeinternal/pollytestpkg1-testid1/", key)
+}
 
-	//update
-	volume2.Fields["mykey1"] = "myvalue3"
+func TestGenerateObjectKeyInvalid(t *testing.T) {
+	_, err := ps.GenerateObjectKey(VolumeInternalLabelsType, "")
+	assert.Error(t, err)
+}
 
-	err = ps.SaveVolumeMetadata(volume2)
-	if err != nil {
-		log.Fatal("Failed to save metadata")
-	}
+func TestSaveVolumeMetadata(t *testing.T) {
+	volume := newVolume("pollytestpkg1", "testid1")
+	volume.Scheduler = "testScheduler"
 
-	log.Print("After UPDATE")
-	for key, value := range volume2.Fields {
-		log.Print(key, " = ", value)
-	}
+	err := ps.SaveVolumeMetadata(volume)
+	assert.NoError(t, err)
 
-	//delte thru save
-	volume2.Fields = make(map[string]string)
-	volume2.Fields["mykey1"] = "myvalue3"
+	volume = newVolume("pollytestpkg1", "testid1")
+	_, err = ps.SetVolumeMetadata(volume)
+	assert.NoError(t, err)
+	assert.Equal(t, "testScheduler", volume.Scheduler)
 
-	err = ps.SaveVolumeMetadata(volume2)
-	if err != nil {
-		log.Fatal("Failed to save metadata")
-	}
+	volume.Labels = make(map[string]string)
+	volume.Labels["testkey1"] = "testval1"
+	err = ps.SaveVolumeMetadata(volume)
+	assert.NoError(t, err)
 
-	log.Print("After DELETE THRU SAVE")
-	for key, value := range volume2.Fields {
-		log.Print(key, " = ", value)
-	}
+	volume = newVolume("pollytestpkg1", "testid1")
+	_, err = ps.SetVolumeMetadata(volume)
+	assert.NoError(t, err)
+	assert.Equal(t, "testval1", volume.Labels["testkey1"])
+}
 
-	//delete all metadata
-	err = ps.DeleteVolumeMetadata(volume2)
-	if err != nil {
-		log.Fatal("Failed to save metadata")
-	}
+func TestSaveVolumeMetadataNoChanges(t *testing.T) {
+	volume := newVolume("pollytestpkg1", "testid1")
+	volume.Scheduler = "testScheduler"
+
+	err := ps.SaveVolumeMetadata(volume)
+	assert.NoError(t, err)
+
+	volume = newVolume("pollytestpkg1", "testid1")
+	_, err = ps.SetVolumeMetadata(volume)
+	assert.NoError(t, err)
+	assert.Equal(t, "testScheduler", volume.Scheduler)
+
+	err = ps.SaveVolumeMetadata(volume)
+	assert.NoError(t, err)
+
+	volume = newVolume("pollytestpkg1", "testid1")
+	_, err = ps.SetVolumeMetadata(volume)
+	assert.NoError(t, err)
+	assert.Equal(t, "testScheduler", volume.Scheduler)
+}
+
+func TestUpdateVolumeMetadata(t *testing.T) {
+	volume := newVolume("pollytestpkg1", "testid1")
+	volume.Scheduler = "testScheduler"
+
+	err := ps.SaveVolumeMetadata(volume)
+	assert.NoError(t, err)
+
+	volume = newVolume("pollytestpkg1", "testid1")
+	_, err = ps.SetVolumeMetadata(volume)
+	assert.NoError(t, err)
+	assert.Equal(t, "testScheduler", volume.Scheduler)
+
+	volume = newVolume("pollytestpkg1", "testid1")
+	_, err = ps.SetVolumeMetadata(volume)
+	assert.NoError(t, err)
+	volume.Scheduler = "testScheduler2"
+
+	err = ps.SaveVolumeMetadata(volume)
+	assert.NoError(t, err)
+
+	volume = newVolume("pollytestpkg1", "testid1")
+	_, err = ps.SetVolumeMetadata(volume)
+	assert.NoError(t, err)
+	assert.Equal(t, "testScheduler2", volume.Scheduler)
+}
+
+func TestRemoveVolumeMetadata(t *testing.T) {
+	volume := newVolume("pollytestpkg1", "testid1")
+	volume.Scheduler = "testScheduler"
+
+	err := ps.SaveVolumeMetadata(volume)
+	assert.NoError(t, err)
+
+	volume = newVolume("pollytestpkg1", "testid1")
+	_, err = ps.SetVolumeMetadata(volume)
+	assert.NoError(t, err)
+	assert.Equal(t, "testScheduler", volume.Scheduler)
+
+	volume = newVolume("pollytestpkg1", "testid1")
+	_, err = ps.SetVolumeMetadata(volume)
+	assert.NoError(t, err)
+
+	volume = newVolume("pollytestpkg1", "testid1")
+	err = ps.RemoveVolumeMetadata(volume)
+	assert.NoError(t, err)
+
+	volume = newVolume("pollytestpkg1", "testid1")
+	_, err = ps.SetVolumeMetadata(volume)
+	assert.NoError(t, err)
+	assert.Equal(t, "", volume.Scheduler)
+
 }

@@ -1,15 +1,13 @@
 package client
 
 import (
-	// "bytes"
-	// "fmt"
-	// log "github.com/Sirupsen/logrus"
+	"fmt"
+	log "github.com/Sirupsen/logrus"
 	"github.com/akutz/gofig"
 	"github.com/akutz/goof"
-
+	lstypes "github.com/emccode/libstorage/api/types"
 	"github.com/emccode/libstorage/client"
 	"github.com/emccode/polly/api/types"
-	// "github.com/emccode/polly/core/store"
 )
 
 // Client is the polly version of libstorage Client
@@ -40,20 +38,31 @@ func startClient(config gofig.Config) (*Client, error) {
 	return c, nil
 }
 
+// NewVolume creates a Polly volume from a libStorage volume
+func NewVolume(vol *lstypes.Volume, service string) *types.Volume {
+	newVol := &types.Volume{
+		Volume:      vol,
+		ServiceName: service,
+		VolumeID:    fmt.Sprintf("%s-%s", service, vol.ID),
+		Labels:      make(map[string]string),
+	}
+	log.WithFields(log.Fields{
+		"newVolume":        newVol,
+		"newVolume.Volume": newVol.Volume,
+	}).Debug("converted volume from libstorage to polly")
+	return newVol
+}
+
 // VolumesByService returns a list of Polly volumes from libstorage
-func (c Client) VolumesByService(name string) ([]*types.Volume, error) {
-	volumeMap, err := c.Client.VolumesByService(name, false)
+func (c Client) VolumesByService(serviceName string) ([]*types.Volume, error) {
+	volumeMap, err := c.Client.VolumesByService(serviceName, false)
 	if err != nil {
 		return nil, err
 	}
 
 	var vols []*types.Volume
 	for _, vol := range volumeMap {
-		vols = append(vols, &types.Volume{
-			Volume:      vol,
-			ServiceName: name,
-			Labels:      make(map[string]string),
-		})
+		vols = append(vols, NewVolume(vol, serviceName))
 	}
 	return vols, nil
 }
@@ -68,12 +77,18 @@ func (c Client) Volumes() ([]*types.Volume, error) {
 	var vols []*types.Volume
 	for serviceName, volumeMap := range serviceVolumeMap {
 		for _, vol := range volumeMap {
-			vols = append(vols, &types.Volume{
-				Volume:      vol,
-				ServiceName: serviceName,
-				Labels:      make(map[string]string),
-			})
+			vols = append(vols, NewVolume(vol, serviceName))
 		}
 	}
 	return vols, nil
+}
+
+// VolumeInspect returns a Polly volume
+func (c Client) VolumeInspect(serviceName, volumeID string, attachments bool) (*types.Volume, error) {
+	vol, err := c.Client.VolumeInspect(serviceName, volumeID, attachments)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewVolume(vol, serviceName), nil
 }
