@@ -1,4 +1,4 @@
-# polly - Polymorphic Volume Scheduling
+# polly - Polymorphic Volume Scheduling ![Build Status](https://travis-ci.org/emccode/polly.svg?branch=master) ![Go Report Card](http://goreportcard.com/badge/emccode/polly) ![codecov.io](https://codecov.io/github/emccode/polly/coverage.svg?branch=master)
 
 ![polly](docs/images/Polly the Parrot_Containers.png)
 

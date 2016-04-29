@@ -19,6 +19,19 @@ go get -v golang.org/x/tools/cmd/cover
 if [[ $(uname -s) != Linux ]]; then exit 0; fi
 
 ########################################################################
+##                             go-bindata                             ##
+########################################################################
+
+GBD_GIT=https://github.com/akutz/go-bindata.git
+GBD_DIR=$GOPATH/src/github.com/jteeuwen/go-bindata
+mkdir -p $GBD_DIR
+cd $GBD_DIR
+git clone $GBD_GIT .
+git checkout feature/md5checksum
+go install ./...
+cd $cwd
+
+########################################################################
 ##                             alien                                  ##
 ########################################################################
 

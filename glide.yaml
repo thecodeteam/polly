@@ -15,7 +15,7 @@ import:
   - package: github.com/emccode/libstorage
     ref:     2a4d9533c7e4183c9ea98c7bfc7ee753a7235798
     vcs:     git
-    repo:    /Users/clintonkitson/go/src/github.com/emccode/libstorage
+    repo:    https://github.com/clintonskitson/libstorage
   - package: github.com/docker/libkv
     vcs:     git
   - package: github.com/boltdb/bolt
