@@ -226,6 +226,10 @@ build: _pre-make _build _post-make
 _build: _deps _fmt build_
 build_:
 	@echo "target: build"
+	@printf "  ...building libstorage executor $(V_OS_ARCH)..."; \
+	  cd $(BASEDIR)/vendor/github.com/emccode/libstorage; \
+		mkdir -p api/server/executors/bin; \
+		go-bindata -md5checksum -pkg executors -prefix api/server/executors/bin -o api/server/executors/executors_generated.go api/server/executors/bin/...
 	@printf "  ...building polly $(V_OS_ARCH)..."; \
 		cd $(BASEDIR); \
 		FILE=$(BINDIR)/$(V_OS_ARCH)/polly; \
@@ -309,7 +313,7 @@ _install: _deps _fmt
 			FILE=$(GOPATH)/bin/polly; \
 			BYTES=$$($(STAT_FILE_SIZE)); \
 			SIZE=$$(($$BYTES / 1024 / 1024)); \
-			printf "\nThe REX-Ray binary is $${SIZE}MB and located at:\n\n"; \
+			printf "\nThe Polly binary is $${SIZE}MB and located at:\n\n"; \
 			printf "  $$FILE\n\n"; \
 		fi
 
@@ -386,7 +390,7 @@ rpm:
 			cp -f $$FILE $(DEPLOY)/latest/polly-latest-$(V_ARCH).rpm; \
 			BYTES=$$($(STAT_FILE_SIZE)); \
 			SIZE=$$(($$BYTES / 1024 / 1024)); \
-			printf "\nThe REX-Ray RPM is $${SIZE}MB and located at:\n\n"; \
+			printf "\nThe Polly RPM is $${SIZE}MB and located at:\n\n"; \
 			printf "  $$FILE\n\n"; \
 		fi
 
@@ -416,7 +420,7 @@ deb:
 			cp -f $$FILE $(DEPLOY)/latest/polly-latest-$(V_ARCH).deb; \
 			BYTES=$$($(STAT_FILE_SIZE)); \
 			SIZE=$$(($$BYTES / 1024 / 1024)); \
-			printf "\nThe REX-Ray DEB is $${SIZE}MB and located at:\n\n"; \
+			printf "\nThe Polly DEB is $${SIZE}MB and located at:\n\n"; \
 			printf "  $$FILE\n\n"; \
 		fi
 
