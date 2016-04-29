@@ -215,7 +215,7 @@ _deps:
 			$(PRINT_STATUS); \
 		printf "  ...glide up..."; \
 			cd $(BASEDIR); \
-			$(GLIDE) up --resolve-current $(MAKE_LOG_FD); \
+			$(GLIDE) --debug up --resolve-current $(MAKE_LOG_FD); \
 			$(PRINT_STATUS); \
 		printf "  ...go get..."; \
 			go get -d $(GOFLAGS) $(NV); \
