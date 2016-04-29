@@ -2,11 +2,13 @@ package store
 
 import (
 	"errors"
-	"log"
+	log "github.com/Sirupsen/logrus"
+	"os"
 	"strings"
 	"time"
 
 	gofig "github.com/akutz/gofig"
+	"github.com/akutz/goof"
 	"github.com/docker/libkv"
 	store "github.com/docker/libkv/store"
 	"github.com/docker/libkv/store/boltdb"
@@ -82,19 +84,42 @@ func NewWithConfig(config gofig.Config) (pollystore *PollyStore, err error) {
 
 	initlist := []int{VolumeType, VolumeInternalLabelsType, VolumeAdminLabelsType}
 	for _, category := range initlist {
-		key, err := ps.GenerateKey(category, "")
+		key, err := ps.GenerateRootKey(category)
 		if err != nil {
-			log.Fatal("failed key gen on store init", err)
+			log.WithError(err).Fatal("failed key gen on store init")
 			return nil, err
 		}
-		ps.store.Put(key, []byte(""), nil)
+		ps.Put(key, []byte(""))
 	}
 
 	return ps, nil
 }
 
+// Put saves key value pairs
+func (ps *PollyStore) Put(key string, bytes []byte) error {
+	log.WithFields(log.Fields{
+		"key":         key,
+		"bytes":       bytes,
+		"bytesString": string(bytes),
+	}).Debug("putting key value")
+	return ps.store.Put(key, bytes, nil)
+}
+
+//GenerateObjectKey generates the internal path (=key) for an object
+func (ps *PollyStore) GenerateObjectKey(mytype int, guid string) (path string, err error) {
+	if guid == "" {
+		return "", goof.New("no guid provided")
+	}
+	return ps.generateKey(mytype, guid)
+}
+
+//GenerateRootKey generates the internal path for root keys
+func (ps *PollyStore) GenerateRootKey(mytype int) (path string, err error) {
+	return ps.generateKey(mytype, "")
+}
+
 //GenerateKey generates the internal path (=key) for persisting a value
-func (ps *PollyStore) GenerateKey(mytype int, guid string) (path string, err error) {
+func (ps *PollyStore) generateKey(mytype int, guid string) (path string, err error) {
 	var parts = make([]string, 0, 3)
 
 	root := ps.Root()
@@ -135,6 +160,45 @@ func (ps *PollyStore) GetKeyFromFQKN(fqkn string) (mykey string, err error) {
 	}
 
 	return fqkn[pos+1:], nil
+}
+
+// List lists the key values pairs for a key
+func (ps *PollyStore) List(key string) ([]*store.KVPair, error) {
+	list, err := ps.store.List(key)
+	if err != nil {
+		return nil, goof.WithError("problem listing key values", err)
+	}
+	log.WithFields(log.Fields{
+		"key":  key,
+		"list": list,
+	}).Debug("got key values")
+	if os.Getenv("POLLY_DEBUG") == "true" {
+		for k, v := range list {
+			log.WithFields(log.Fields{
+				"key":   k,
+				"value": v,
+			})
+		}
+	}
+	return list, nil
+}
+
+// EraseStore erases the store
+func (ps *PollyStore) EraseStore() error {
+	log.WithField("store", ps.store).Warning("erasing polly store trees")
+	if err := ps.store.DeleteTree("/volumeinternal"); err != nil {
+		return err
+	}
+	if err := ps.store.DeleteTree("/volumesnapshot"); err != nil {
+		return err
+	}
+	if err := ps.store.DeleteTree("/volumeadmin"); err != nil {
+		return err
+	}
+	if err := ps.store.DeleteTree("/volume"); err != nil {
+		return err
+	}
+	return nil
 }
 
 //StoreType this generates the type of backing store to use

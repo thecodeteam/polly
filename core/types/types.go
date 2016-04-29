@@ -7,12 +7,11 @@ import (
 	store "github.com/emccode/polly/core/store"
 )
 
-//Polly this represents the "core" functionality for Polly
+// Polly this represents the "core" functionality for Polly
 type Polly struct {
 	Store    *store.PollyStore
 	LsClient *lsclient.Client
 	Config   gofig.Config
 	LsConfig gofig.Config
 	Services http.ServicesMap
-	// server.Server
 }

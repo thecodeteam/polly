@@ -1,35 +1,61 @@
 package core
 
 import (
-	"log"
-
+	"fmt"
+	log "github.com/Sirupsen/logrus"
 	"github.com/akutz/gofig"
 	"github.com/akutz/goof"
+	"github.com/akutz/gotil"
 	adminserver "github.com/emccode/polly/api/admin/server"
 	"github.com/emccode/polly/core/libstorage/client"
 	"github.com/emccode/polly/core/libstorage/server"
 	store "github.com/emccode/polly/core/store"
 	ctypes "github.com/emccode/polly/core/types"
-	"github.com/emccode/polly/core/volumes"
+	util "github.com/emccode/polly/util"
+	"os"
+	"strconv"
 )
 
+func init() {
+	gofig.SetGlobalConfigPath(util.EtcDirPath())
+	gofig.SetUserConfigPath(fmt.Sprintf("%s/.polly", gotil.HomeDir()))
+	gofig.Register(globalRegistration())
+
+	if debug, _ := strconv.ParseBool(os.Getenv("POLLY_DEBUG")); debug {
+		log.SetLevel(log.DebugLevel)
+		os.Setenv("POLLY_SERVER_HTTP_LOGGING_ENABLED", "true")
+		os.Setenv("POLLY_SERVER_HTTP_LOGGING_LOGREQUEST", "true")
+		os.Setenv("POLLY_SERVER_HTTP_LOGGING_LOGRESPONSE", "true")
+		os.Setenv("POLLY_CLIENT_HTTP_LOGGING_ENABLED", "true")
+		os.Setenv("POLLY_CLIENT_HTTP_LOGGING_LOGREQUEST", "true")
+		os.Setenv("POLLY_CLIENT_HTTP_LOGGING_LOGRESPONSE", "true")
+	}
+
+}
+
+func globalRegistration() *gofig.Registration {
+	r := gofig.NewRegistration("Global")
+	r.Yaml(`
+polly:
+  host: :7980
+  logLevel: warn
+`)
+	r.Key(gofig.String, "l", "warn",
+		"The log level (error, warn, info, debug)", "polly.logLevel",
+		"logLevel")
+	return r
+}
+
 //NewWithConfigFile init the lib
-func NewWithConfigFile(path string) (p *ctypes.Polly, err error) {
+func NewWithConfigFile(path string) (*ctypes.Polly, error) {
 	config := gofig.New()
-
-	myErr := config.ReadConfigFile(path)
-	if myErr != nil {
-		log.Fatal("Fatal: ", myErr)
-		return nil, myErr
+	if err := config.ReadConfigFile(path); err != nil {
+		return nil, goof.WithError("problem reading config", err)
 	}
 
-	pollyCore, myErr := NewWithConfig(config)
-	if myErr != nil {
-		log.Fatal("Fatal: ", myErr)
-		return nil, myErr
-	}
+	p := NewWithConfig(config)
 
-	return pollyCore, nil
+	return p, nil
 }
 
 const (
@@ -48,44 +74,50 @@ polly:
 `
 )
 
-//NewWithConfig This initializes new instance of this library
-func NewWithConfig(config gofig.Config) (*ctypes.Polly, error) {
-	ps, err := store.NewWithConfig(config.Scope("polly.store"))
-	if err != nil {
-		return nil, err
+// NewWithConfig initializes new polly object
+func NewWithConfig(config gofig.Config) *ctypes.Polly {
+	return &ctypes.Polly{
+		Config: config,
 	}
+}
 
-	lscfg, err := server.New()
+// Start starts the Polly core services and returns
+func Start(p *ctypes.Polly) error {
+	scfg, _ := p.Config.Copy()
+	ps, err := store.NewWithConfig(scfg.Scope("polly.store"))
 	if err != nil {
-		return nil, err
+		return err
 	}
+	p.Store = ps
+
+	lcfg, _ := p.Config.Copy()
+	lscfg, err := server.New(lcfg.Scope("polly"))
+	if err != nil {
+		return err
+	}
+	p.LsConfig = lscfg
 
 	lsc, err := client.NewWithConfig(lscfg)
 	if err != nil {
-		return nil, err
+		return err
 	}
+	p.LsClient = lsc
 
 	services, err := lsc.Services()
 	if err != nil {
-		return nil, goof.WithError("cannot instantiate client services", err)
+		return goof.WithError("cannot instantiate client services", err)
 	}
+	p.Services = services
 
-	pc := &ctypes.Polly{
-		Store:    ps,
-		LsConfig: lscfg,
-		LsClient: lsc,
-		Config:   config,
-		Services: services,
-	}
-
-	_ = adminserver.New(pc)
-	if err := volumes.Init(pc); err != nil {
-		return nil, err
-	}
-
-	return pc, nil
+	_ = adminserver.Start(p)
+	return nil
 }
 
-// if err := pcfg.ReadConfigFile("/etc/polly/config.yml"); err != nil {
-// 	return nil, err
-// }
+// Run starts the Polly core services and blocks
+func Run(p *ctypes.Polly) error {
+	if err := Start(p); err != nil {
+		goof.WithError("could not run polly core services", err)
+	}
+
+	select {}
+}
