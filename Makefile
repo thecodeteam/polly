@@ -229,7 +229,9 @@ build_:
 	@printf "  ...building libstorage executor $(V_OS_ARCH)..."; \
 	  cd $(BASEDIR)/vendor/github.com/emccode/libstorage; \
 		mkdir -p api/server/executors/bin; \
-		go-bindata -md5checksum -pkg executors -prefix api/server/executors/bin -o api/server/executors/executors_generated.go api/server/executors/bin/...
+		make ./api/server/executors/executors_generated.go; \
+		cd $(BASEDIR)/vendor/github.com/emccode/libstorage; \
+		ls api/server/executors/bin;
 	@printf "  ...building polly $(V_OS_ARCH)..."; \
 		cd $(BASEDIR); \
 		FILE=$(BINDIR)/$(V_OS_ARCH)/polly; \

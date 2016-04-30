@@ -13,7 +13,7 @@ import:
   - package: github.com/cesanta/validate-json
   - package: github.com/stretchr/testify
   - package: github.com/emccode/libstorage
-    ref:     2a4d9533c7e4183c9ea98c7bfc7ee753a7235798
+    ref:     0d74800f4561de3526b31135677931c1354c9325
     vcs:     git
     repo:    https://github.com/clintonskitson/libstorage
   - package: github.com/docker/libkv
