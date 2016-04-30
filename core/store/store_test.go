@@ -80,7 +80,7 @@ func TestGenerateObjectKeyInvalid(t *testing.T) {
 
 func TestSaveVolumeMetadata(t *testing.T) {
 	volume := newVolume("pollytestpkg1", "testid1")
-	volume.Scheduler = "testScheduler"
+	volume.Schedulers = []string{"testScheduler"}
 
 	err := ps.SaveVolumeMetadata(volume)
 	assert.NoError(t, err)
@@ -88,7 +88,7 @@ func TestSaveVolumeMetadata(t *testing.T) {
 	volume = newVolume("pollytestpkg1", "testid1")
 	_, err = ps.SetVolumeMetadata(volume)
 	assert.NoError(t, err)
-	assert.Equal(t, "testScheduler", volume.Scheduler)
+	assert.Contains(t, volume.Schedulers, "testScheduler")
 
 	volume.Labels = make(map[string]string)
 	volume.Labels["testkey1"] = "testval1"
@@ -103,7 +103,7 @@ func TestSaveVolumeMetadata(t *testing.T) {
 
 func TestSaveVolumeMetadataNoChanges(t *testing.T) {
 	volume := newVolume("pollytestpkg1", "testid1")
-	volume.Scheduler = "testScheduler"
+	volume.Schedulers = []string{"testScheduler"}
 
 	err := ps.SaveVolumeMetadata(volume)
 	assert.NoError(t, err)
@@ -111,7 +111,7 @@ func TestSaveVolumeMetadataNoChanges(t *testing.T) {
 	volume = newVolume("pollytestpkg1", "testid1")
 	_, err = ps.SetVolumeMetadata(volume)
 	assert.NoError(t, err)
-	assert.Equal(t, "testScheduler", volume.Scheduler)
+	assert.Contains(t, volume.Schedulers, "testScheduler")
 
 	err = ps.SaveVolumeMetadata(volume)
 	assert.NoError(t, err)
@@ -119,12 +119,12 @@ func TestSaveVolumeMetadataNoChanges(t *testing.T) {
 	volume = newVolume("pollytestpkg1", "testid1")
 	_, err = ps.SetVolumeMetadata(volume)
 	assert.NoError(t, err)
-	assert.Equal(t, "testScheduler", volume.Scheduler)
+	assert.Contains(t, volume.Schedulers, "testScheduler")
 }
 
 func TestUpdateVolumeMetadata(t *testing.T) {
 	volume := newVolume("pollytestpkg1", "testid1")
-	volume.Scheduler = "testScheduler"
+	volume.Schedulers = []string{"testScheduler"}
 
 	err := ps.SaveVolumeMetadata(volume)
 	assert.NoError(t, err)
@@ -132,12 +132,12 @@ func TestUpdateVolumeMetadata(t *testing.T) {
 	volume = newVolume("pollytestpkg1", "testid1")
 	_, err = ps.SetVolumeMetadata(volume)
 	assert.NoError(t, err)
-	assert.Equal(t, "testScheduler", volume.Scheduler)
+	assert.Contains(t, volume.Schedulers, "testScheduler")
 
 	volume = newVolume("pollytestpkg1", "testid1")
 	_, err = ps.SetVolumeMetadata(volume)
 	assert.NoError(t, err)
-	volume.Scheduler = "testScheduler2"
+	volume.Schedulers = []string{"testScheduler2"}
 
 	err = ps.SaveVolumeMetadata(volume)
 	assert.NoError(t, err)
@@ -145,12 +145,12 @@ func TestUpdateVolumeMetadata(t *testing.T) {
 	volume = newVolume("pollytestpkg1", "testid1")
 	_, err = ps.SetVolumeMetadata(volume)
 	assert.NoError(t, err)
-	assert.Equal(t, "testScheduler2", volume.Scheduler)
+	assert.Contains(t, volume.Schedulers, "testScheduler2")
 }
 
 func TestRemoveVolumeMetadata(t *testing.T) {
 	volume := newVolume("pollytestpkg1", "testid1")
-	volume.Scheduler = "testScheduler"
+	volume.Schedulers = []string{"testScheduler"}
 
 	err := ps.SaveVolumeMetadata(volume)
 	assert.NoError(t, err)
@@ -158,7 +158,7 @@ func TestRemoveVolumeMetadata(t *testing.T) {
 	volume = newVolume("pollytestpkg1", "testid1")
 	_, err = ps.SetVolumeMetadata(volume)
 	assert.NoError(t, err)
-	assert.Equal(t, "testScheduler", volume.Scheduler)
+	assert.Contains(t, volume.Schedulers, "testScheduler")
 
 	volume = newVolume("pollytestpkg1", "testid1")
 	_, err = ps.SetVolumeMetadata(volume)
@@ -171,6 +171,6 @@ func TestRemoveVolumeMetadata(t *testing.T) {
 	volume = newVolume("pollytestpkg1", "testid1")
 	_, err = ps.SetVolumeMetadata(volume)
 	assert.NoError(t, err)
-	assert.Equal(t, "", volume.Scheduler)
+	assert.Len(t, volume.Schedulers, 0)
 
 }
