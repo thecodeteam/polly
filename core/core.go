@@ -6,6 +6,7 @@ import (
 	"github.com/akutz/gofig"
 	"github.com/akutz/goof"
 	"github.com/akutz/gotil"
+	"github.com/emccode/libstorage/api/context"
 	adminserver "github.com/emccode/polly/api/admin/server"
 	"github.com/emccode/polly/core/libstorage/client"
 	"github.com/emccode/polly/core/libstorage/server"
@@ -107,13 +108,14 @@ func Start(p *ctypes.Polly) error {
 	}
 	p.LsConfig = lscfg
 
-	lsc, err := client.NewWithConfig(lscfg)
+	ctx := context.Background()
+	lsc, err := client.NewWithConfig(ctx, lscfg)
 	if err != nil {
 		return err
 	}
 	p.LsClient = lsc
 
-	services, err := lsc.Services()
+	services, err := lsc.API().Services(ctx)
 	if err != nil {
 		return goof.WithError("cannot instantiate client services", err)
 	}

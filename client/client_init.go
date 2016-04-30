@@ -12,9 +12,6 @@ import (
 
 	"github.com/emccode/libstorage/api/utils"
 	apiclient "github.com/emccode/polly/api/admin/client"
-
-	// load the drivers
-	_ "github.com/emccode/libstorage/drivers/os"
 )
 
 func init() {
