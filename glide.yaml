@@ -13,9 +13,9 @@ import:
   - package: github.com/cesanta/validate-json
   - package: github.com/stretchr/testify
   - package: github.com/emccode/libstorage
-    ref:     0d74800f4561de3526b31135677931c1354c9325
+    ref:     2500328e18a7644a5ef18d8af49179b2b07794f4
     vcs:     git
-    repo:    https://github.com/clintonskitson/libstorage
+    repo:    https://github.com/emccode/libstorage
   - package: github.com/docker/libkv
     vcs:     git
   - package: github.com/boltdb/bolt

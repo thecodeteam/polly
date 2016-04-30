@@ -3,9 +3,8 @@ package volumes
 import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/akutz/goof"
-	apihttp "github.com/emccode/libstorage/api/types/http"
+	apitypes "github.com/emccode/libstorage/api/types"
 	"github.com/emccode/polly/api/types"
-	lsclient "github.com/emccode/polly/core/libstorage/client"
 	ptypes "github.com/emccode/polly/core/types"
 	"net/url"
 	"strconv"
@@ -228,7 +227,7 @@ func (v *Vsc) VolumeCreate(request *types.VolumeCreateRequest) (*types.Volume, e
 	}).Debug("vsc.VolumeCreate()")
 
 	opts := map[string]interface{}{}
-	volumeCreateRequest := &apihttp.VolumeCreateRequest{
+	volumeCreateRequest := &apitypes.VolumeCreateRequest{
 		Name:             request.Name,
 		AvailabilityZone: &request.AvailabilityZone,
 		Type:             &request.VolumeType,
@@ -237,21 +236,19 @@ func (v *Vsc) VolumeCreate(request *types.VolumeCreateRequest) (*types.Volume, e
 		Opts:             opts,
 	}
 
-	reply, err := v.p.LsClient.VolumeCreate(request.ServiceName, volumeCreateRequest)
+	vol, err := v.p.LsClient.VolumeCreate(request.ServiceName, volumeCreateRequest)
 	if err != nil {
 		return nil, err
 	}
+	vol.Schedulers = request.Schedulers
+	vol.Labels = request.Labels
 
-	volNew := lsclient.NewVolume(reply, request.ServiceName)
-	volNew.Schedulers = request.Schedulers
-	volNew.Labels = request.Labels
-
-	err = v.p.Store.SaveVolumeMetadata(volNew)
+	err = v.p.Store.SaveVolumeMetadata(vol)
 	if err != nil {
 		return nil, goof.WithError("failed to save metadata", err)
 	}
 
-	return volNew, nil
+	return vol, nil
 }
 
 // VolumeRemove removes a volume
