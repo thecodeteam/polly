@@ -31,6 +31,16 @@ func init() {
 		os.Setenv("POLLY_CLIENT_HTTP_LOGGING_LOGRESPONSE", "true")
 	}
 
+	if debug, _ := strconv.ParseBool(os.Getenv("LIBSTORAGE_DEBUG")); debug {
+		log.SetLevel(log.DebugLevel)
+		os.Setenv("LIBSTORAGE_SERVER_HTTP_LOGGING_ENABLED", "true")
+		os.Setenv("LIBSTORAGE_SERVER_HTTP_LOGGING_LOGREQUEST", "true")
+		os.Setenv("LIBSTORAGE_SERVER_HTTP_LOGGING_LOGRESPONSE", "true")
+		os.Setenv("LIBSTORAGE_CLIENT_HTTP_LOGGING_ENABLED", "true")
+		os.Setenv("LIBSTORAGE_CLIENT_HTTP_LOGGING_LOGREQUEST", "true")
+		os.Setenv("LIBSTORAGE_CLIENT_HTTP_LOGGING_LOGRESPONSE", "true")
+	}
+
 }
 
 func globalRegistration() *gofig.Registration {
