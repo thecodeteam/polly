@@ -3,11 +3,12 @@ package store
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
+
 	log "github.com/Sirupsen/logrus"
 	"github.com/akutz/goof"
 	store "github.com/docker/libkv/store"
 	"github.com/emccode/polly/api/types"
-	"strings"
 )
 
 // Exists returns true if a key for the specified Volume exists in the store
@@ -174,36 +175,6 @@ func (ps *PollyStore) SaveVolumeMetadata(volume *types.Volume) error {
 	err = ps.SaveVolumeAdminLabels(volume)
 	if err != nil {
 		return goof.New("failed to save fields")
-	}
-
-	return nil
-}
-
-//SetVolumeFields sets volume fields associated with libstorage
-func (ps *PollyStore) SetVolumeFields(volume *types.Volume) error {
-	key, err := ps.GenerateObjectKey(VolumeType, volume.VolumeID)
-	if err != nil {
-		return err
-	}
-
-	log.WithFields(log.Fields{
-		"vol": volume,
-		"key": key}).Info("saving volume fields")
-
-	//current keys in libkv
-	kvpairs, err := ps.List(key)
-	if err != nil {
-		return err
-	}
-
-	volume.Fields = make(map[string]string)
-	for _, pair := range kvpairs {
-		key, err := ps.GetKeyFromFQKN(pair.Key)
-		if err != nil {
-			log.Error("invalid key format")
-			continue
-		}
-		volume.Fields[key] = string(pair.Value)
 	}
 
 	return nil

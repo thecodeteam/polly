@@ -2,16 +2,18 @@ package store
 
 import (
 	"bytes"
+
 	log "github.com/Sirupsen/logrus"
 
 	"testing"
+
+	"os"
 
 	gofig "github.com/akutz/gofig"
 	lstypes "github.com/emccode/libstorage/api/types"
 	"github.com/emccode/polly/api/types"
 	lsclient "github.com/emccode/polly/core/libstorage/client"
 	"github.com/stretchr/testify/assert"
-	"os"
 )
 
 const (
@@ -76,6 +78,24 @@ func TestGenerateObjectKey(t *testing.T) {
 func TestGenerateObjectKeyInvalid(t *testing.T) {
 	_, err := ps.GenerateObjectKey(VolumeInternalLabelsType, "")
 	assert.Error(t, err)
+}
+
+func TestNotExist(t *testing.T) {
+	volume := newVolume("pollytestpkg2", "testid2")
+
+	_, err := ps.Exists(volume)
+	assert.Error(t, err)
+}
+
+func TestGetVolumeIDs(t *testing.T) {
+	volume := newVolume("pollytestpkg1", "testid1")
+
+	err := ps.SaveVolumeMetadata(volume)
+	assert.NoError(t, err)
+
+	ids, err := ps.GetVolumeIds()
+	assert.NoError(t, err)
+	assert.Equal(t, len(ids), 1)
 }
 
 func TestSaveVolumeMetadata(t *testing.T) {
@@ -172,5 +192,27 @@ func TestRemoveVolumeMetadata(t *testing.T) {
 	_, err = ps.SetVolumeMetadata(volume)
 	assert.NoError(t, err)
 	assert.Len(t, volume.Schedulers, 0)
+}
 
+func TestEraseStore(t *testing.T) {
+	myConfig := gofig.New()
+
+	configYamlBuf := []byte(libStorageConfigBaseBolt)
+	if err := myConfig.ReadConfig(bytes.NewReader(configYamlBuf)); err != nil {
+		panic(err)
+	}
+
+	var err error
+	myPs, err := NewWithConfig(myConfig.Scope("polly.store"))
+	if err != nil {
+		log.Fatal("Failed to create PollyStore")
+	}
+
+	volume := newVolume("pollytestpkg1", "testid1")
+
+	err = myPs.SaveVolumeMetadata(volume)
+	assert.NoError(t, err)
+
+	err = myPs.EraseStore()
+	assert.NoError(t, err)
 }

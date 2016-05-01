@@ -2,10 +2,11 @@ package store
 
 import (
 	"errors"
-	log "github.com/Sirupsen/logrus"
 	"os"
 	"strings"
 	"time"
+
+	log "github.com/Sirupsen/logrus"
 
 	gofig "github.com/akutz/gofig"
 	"github.com/akutz/goof"
@@ -20,12 +21,10 @@ import (
 const (
 	//VolumeType is used to identify metadata for the libstorage layer
 	VolumeType = 1
-	//SnapshotType self explanatory
-	SnapshotType = 2
 	//VolumeInternalLabelsType is used to identify metadata for the Polly admin layer
-	VolumeInternalLabelsType = 3
+	VolumeInternalLabelsType = 2
 	//VolumeAdminLabelsType is used to identify labels for the Polly admin layer
-	VolumeAdminLabelsType = 4
+	VolumeAdminLabelsType = 3
 )
 
 var (
@@ -140,8 +139,6 @@ func (ps *PollyStore) generateKey(mytype int, guid string) (path string, err err
 	switch mytype {
 	case VolumeType:
 		parts = append(parts, "volumelibstorage")
-	case SnapshotType:
-		parts = append(parts, "snapshot")
 	case VolumeInternalLabelsType:
 		parts = append(parts, "volumeinternal")
 	case VolumeAdminLabelsType:
