@@ -1,0 +1,24 @@
+site_name: Polly
+site_url: https://github.com/emccode/polly
+repo_url: https://github.com/emccode/polly.git
+docs_dir: .docs
+site_dir: .site
+theme_dir: .docs/.themes/yeti
+#site_favicon: favicon.png
+
+pages:
+- Home: index.md
+- User Guide:
+    - Installation: user-guide/installation.md
+    - Configuration: user-guide/configuration.md
+    - Storage providers: user-guide/storage-providers.md
+    - Container schedulers: user-guide/container-schedulers.md
+    - Cloud platforms: user-guide/cloud-platforms.md
+- Developer guide:
+    - Project guidelines: developer-guide/project-guidelines.md
+    - Build reference: developer-guide/build-reference.md
+    - Release process: developer-guide/release-process.md
+- About:
+    - Contributing: about/contributing.md
+    - License: about/license.md
+    - Release notes: about/release-notes.md
