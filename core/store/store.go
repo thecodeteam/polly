@@ -44,6 +44,16 @@ type PollyStore struct {
 	root   string
 }
 
+func init() {
+	gofig.Register(configRegistration())
+}
+
+func configRegistration() *gofig.Registration {
+	r := gofig.NewRegistration("Store")
+	r.Key(gofig.String, "", "polly", "", "root", "root")
+	return r
+}
+
 //NewWithConfig This initializes new instance of this library
 func NewWithConfig(config gofig.Config) (pollystore *PollyStore, err error) {
 	cfg := store.Config{
@@ -147,7 +157,6 @@ func (ps *PollyStore) generateKey(mytype int, guid string) (path string, err err
 	}
 
 	path = strings.Join(parts, "/")
-	path = store.Normalize(path)
 	path += "/"
 	return
 }
