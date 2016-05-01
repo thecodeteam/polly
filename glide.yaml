@@ -5,6 +5,8 @@ import:
     repo:    https://github.com/akutz/logrus
     vcs:     git
   - package: github.com/akutz/gofig
+    ref:     e403cdba84cf4fbf931bf7bf5d86066dbab5b850
+    vcs:     git
   - package: github.com/akutz/gotil
   - package: github.com/akutz/goof
   - package: github.com/blang/semver
