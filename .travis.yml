@@ -10,6 +10,9 @@ addons:
     packages:
     - rpm
 
+script:
+  - $HOME/gopath/bin/goveralls -service=travis-ci
+
 before_script:
   - source .build/dependencies.sh
 
