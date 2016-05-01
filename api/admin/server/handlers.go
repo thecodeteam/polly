@@ -9,6 +9,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/akutz/goof"
 	"github.com/emccode/polly/api/types"
+	"github.com/emccode/polly/core/version"
 	"github.com/gorilla/mux"
 )
 
@@ -227,4 +228,38 @@ func (rtr *Router) deleteVolumesHandler(w http.ResponseWriter, r *http.Request) 
 	w.WriteHeader(http.StatusNoContent)
 
 	return
+}
+
+// getVersionHandler is gorilla mux handler for GET version on REST API
+func (rtr *Router) getVersionHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	ver := &types.VersionResponse{
+		VersionPollyAdminAPI:     "v0.1.0",
+		VersionPollySchedulerAPI: "v0.1.0",
+		VersionPollyBuild:        version.SemVer,
+	}
+
+	j, _ := json.Marshal(&ver)
+	w.Write(j)
+}
+
+// notAllowedHandler is used to set a status code for unsupported operations
+func (rtr *Router) notAllowedHandler(allow ...string) func(w http.ResponseWriter, req *http.Request) {
+	return func(w http.ResponseWriter, req *http.Request) {
+		mesg := "Method Not Allowed. "
+		if len(allow) > 0 {
+			mesg += "Allow " + strings.Join(allow, ", ")
+		}
+		http.Error(w, mesg, http.StatusMethodNotAllowed)
+		return
+	}
+}
+
+// notImplementedHandler is used to set a status code for future operations
+func (rtr *Router) notImplementedHandler() func(w http.ResponseWriter, req *http.Request) {
+	return func(w http.ResponseWriter, req *http.Request) {
+		http.Error(w, "Not Implemented Yet", http.StatusNotImplemented)
+		return
+	}
 }

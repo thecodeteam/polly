@@ -25,15 +25,32 @@ func Start(p *ctypes.Polly) *Router {
 	}
 
 	//volumes
+	r.r.HandleFunc("/admin/version", r.getVersionHandler).Methods("GET")
+	r.r.HandleFunc("/admin/version",
+		r.notAllowedHandler("GET")).Methods("POST", "PUT", "PATCH", "DELETE")
 	r.r.HandleFunc("/admin/volumes", r.getVolumesHandler).Methods("GET")
-	r.r.HandleFunc("/admin/volumesall", r.getVolumesAllHandler).Methods("GET")
-	r.r.HandleFunc("/admin/volumes/{volumeID}", r.getVolumeInspectHandler).Methods("GET")
 	r.r.HandleFunc("/admin/volumes", r.postVolumesHandler).Methods("POST")
-	r.r.HandleFunc("/admin/volumeoffer", r.postVolumeOfferHandler).Methods("POST")
-	r.r.HandleFunc("/admin/volumeofferrevoke", r.postVolumeOfferRevokeHandler).Methods("POST")
-	r.r.HandleFunc("/admin/volumelabel", r.postVolumeLabelHandler).Methods("POST")
-	r.r.HandleFunc("/admin/volumelabelsremove", r.postVolumeLabelsRemoveHandler).Methods("POST")
+	r.r.HandleFunc("/admin/volumes",
+		r.notAllowedHandler("GET", "POST")).Methods("PUT", "PATCH", "DELETE")
+	r.r.HandleFunc("/admin/volumesall", r.getVolumesAllHandler).Methods("GET")
+	r.r.HandleFunc("/admin/volumesall",
+		r.notAllowedHandler("GET")).Methods("POST", "PUT", "PATCH", "DELETE")
+	r.r.HandleFunc("/admin/volumes/{volumeID}", r.getVolumeInspectHandler).Methods("GET")
 	r.r.HandleFunc("/admin/volumes/{volid}", r.deleteVolumesHandler).Methods("DELETE")
+	r.r.HandleFunc("/admin/volumes/{volumeID}",
+		r.notAllowedHandler("GET", "DELETE")).Methods("PUT", "PATCH", "POST")
+	r.r.HandleFunc("/admin/volumeoffer", r.postVolumeOfferHandler).Methods("POST")
+	r.r.HandleFunc("/admin/volumeoffer",
+		r.notAllowedHandler("POST")).Methods("GET", "PUT", "PATCH", "DELETE")
+	r.r.HandleFunc("/admin/volumeofferrevoke", r.postVolumeOfferRevokeHandler).Methods("POST")
+	r.r.HandleFunc("/admin/volumeofferrevoke",
+		r.notAllowedHandler("POST")).Methods("GET", "PUT", "PATCH", "DELETE")
+	r.r.HandleFunc("/admin/volumelabel", r.postVolumeLabelHandler).Methods("POST")
+	r.r.HandleFunc("/admin/volumelabel",
+		r.notAllowedHandler("POST")).Methods("GET", "PUT", "PATCH", "DELETE")
+	r.r.HandleFunc("/admin/volumelabelsremove", r.postVolumeLabelsRemoveHandler).Methods("POST")
+	r.r.HandleFunc("/admin/volumelabelsremove",
+		r.notAllowedHandler("POST")).Methods("GET", "PUT", "PATCH", "DELETE")
 
 	http.Handle("/", r.r)
 
