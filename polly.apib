@@ -8,7 +8,7 @@ Polly implements a centralized storage scheduling service that integrates with p
 It is an open source framework that supports use of external storage, with scheduled containerized workloads, at scale.
 It can be used to centralize the control of creating, mapping, snapshotting and deleting persistent data volumes on a multitude of storage platforms.
 
-## Questions Collection [/admin/volumes]
+## Managed Volumes Collection [/admin/volumes]
 
 ### List All Managed Volumes [GET]
 
@@ -41,11 +41,10 @@ It can be used to centralize the control of creating, mapping, snapshotting and 
             }
         ]
 
-### Create a New Volume [POST]
+### Create a New Managed Volume [POST]
 
 You may create a volume using this action. It takes a JSON
 object containing a specification.
-
 
     + Body
 
@@ -68,33 +67,323 @@ object containing a specification.
             }
 
 
-+ Response 201 (application/json)
++ Response 200 (application/json)
 
     + Headers
 
-            Location: /admin/volumes/pollyvol-005
+            Location: /admin/volumes/ec2-00-vol-005
 
     + Body
 
             {
-                "id":     "vol-000",
-                "name":   "mysql-vol",
-                "iops": 135,
                 "availabilityZone": "east",
-                "networkName", "",
+                "iops": 1200,
+                "name":   "mysql-vol",
                 "size":   10240,
-                "status": "online",
+                "id":     "vol-000",
                 "type":   "nas",
-                "fields": {
-                    "storageadminappliedlabel1":    "bar"
-                }
-                "volumeid": "pollyvol-005",
+                "volumeid": "ec2-00-vol-005",
                 "serviceName": "ec2-00",
                 "schedulers": [
                         "mesos-15"
                 ],
                 "labels": {
-                    "pollyadminappliedlabel1": "bar"
+                    "pollyadminappliedlabel1": "foo"
+                }
+                "fields": {
+                    "storageadminappliedlabel1": "bar"
                 }
             }
-  
+
+## Volume [/admin/volumes/{volumeID}]
+
+### Delete a Managed Volume [DELETE]
+
+You may delete a volume managed by Polly using this action.
+
++ Response 200 (application/json/)
+
+        [
+            {
+                "id":     "vol-000",
+                "name":   "mesos-casandra",
+                "iops": 135,
+                "networkName", "vlan15",
+                "size":   10240,
+                "status": "online",
+                "type":   "nas",
+                "availabilityZone": "east",
+                "fields": {
+                    "priority": 2,
+                    "owner":    "sakutz@gmail.com"
+                }
+                "volumeid": "pollyvol-005",
+                "serviceName": "ec2-00",
+                "schedulers": [
+                        "kubernetes1",
+                        "mesos14"
+                ],
+                "labels": {
+                    "admin-applied-label1": "blue",
+                    "admin-applied-label2": "aisle-17"
+                }
+            }
+        ]
+
+### List information about a specified managed volume [GET]
+
++ Response 200 (application/json)
+
+        {
+            "availabilityZone":"west",
+            "iops":1200,
+            "name":"postgreSQL-vol",
+            "size":10240,
+            "id":"vol-006",
+            "type":"nas",
+            "volumeid":"mock-vol-006",
+            "serviceName":"mock",
+            "schedulers":["kubernetes-1"]
+        }
+
+## Version [/admin/version]
+
+### List version of Polly server [GET]
+
++ Response 200 (application/json)
+
+        {
+            "versionPollyAdminAPI":"v0.1.0",
+            "versionPollySchedulerAPI":"v0.1.0",
+            "versionPollyBuild":"0.1.0-dev+44+dirty"
+        }
+
+## Volumes Collection [/admin/volumesall]
+
+### List All Volumes, managed and unmanaged [GET]
+
++ Response 200 (application/json)
+
+        [
+            {
+                "availabilityZone":"zone-000",
+                "name":"Volume 0",
+                "size":10240,
+                "id":"vol-000",
+                "type":"gold",
+                "volumeid":"mock-vol-000",
+                "serviceName":"mock"
+            },
+            {
+                "availabilityZone":"zone-001",
+                "name":"Volume 1",
+                "size":40960,
+                "id":"vol-001",
+                "type":"gold",
+                "volumeid":"mock-vol-001",
+                "serviceName":"mock"
+            },
+            {
+                "availabilityZone":"zone-002",
+                "name":"Volume 2",
+                "size":163840,
+                "id":"vol-002",
+                "type":"gold",
+                "volumeid":"mock-vol-002",
+                "serviceName":"mock"
+            },
+            {
+                "availabilityZone":"east",
+                "iops":135,
+                "name":"mysql-vol",
+                "size":10240,
+                "id":"vol-005",
+                "type":"nas",
+                "volumeid":"mock-vol-005",
+                "serviceName":"mock",
+                "schedulers":
+                    [
+                        "mesos-15"
+                    ]
+            },
+            {
+                "availabilityZone":"west",
+                "iops":1200,
+                "name":"postgreSQL-vol",
+                "size":10240,
+                "id":"vol-006",
+                "type":"nas",
+                "volumeid":"mock-vol-006",
+                "serviceName":"mock",
+                "schedulers":
+                    [
+                        "kubernetes-1"
+                    ]
+            },
+            {
+                "availabilityZone":"zone-000",
+                "name":"Volume 0",
+                "size":10240,
+                "id":"vol-000",
+                "type":"gold",
+                "volumeid":"mock2-vol-000",
+                "serviceName":"mock2"
+            },
+            {
+                "availabilityZone":"zone-001",
+                "name":"Volume 1",
+                "size":40960,
+                "id":"vol-001",
+                "type":"gold",
+                "volumeid":"mock2-vol-001",
+                "serviceName":"mock2"
+            },
+            {
+                "availabilityZone":"zone-002",
+                "name":"Volume 2",
+                "size":163840,
+                "id":"vol-002",
+                "type":"gold",
+                "volumeid":"mock2-vol-002",
+                "serviceName":"mock2"
+            }
+        ]
+
+## Volume Association [/admin/volumeoffer]
+
+### Associate a specified Volume with a container scheduler [POST]
+
+You may associate a volume with a container scheduler using this action. It takes a JSON
+object containing a specification for the volume and scheduler name.
+
+    + Body
+
+        {
+            "volumeID": "mock-vol-000",
+            "schedulers":
+                [
+                    "mesos-99"
+                ]
+        }
+
+
++ Response 200 (application/json)
+
+    + Body
+
+            {
+                "availabilityZone":"zone-000",
+                "name":"Volume 0",
+                "size":10240,
+                "id":"vol-000",
+                "type":"gold",
+                "volumeid":"mock-vol-000",
+                "serviceName":"mock",
+                "schedulers":[
+                    "mesos-99"
+                ]
+            }
+
+## Volume Disassociation [/admin/volumeofferrevoke]
+
+### Disassociate a specified Volume with a container scheduler [POST]
+
+You may disassociate a volume with a container scheduler using this action. It takes a JSON
+object containing a specification for the volume and scheduler name.
+
+    + Body
+
+        {
+            "volumeID": "mock-vol-000",
+            "schedulers":
+                [
+                    "mesos-99"
+                ]
+        }
+
+
++ Response 200 (application/json)
+
+    + Body
+
+            {
+                "availabilityZone":"zone-000",
+                "name":"Volume 0",
+                "size":10240,
+                "id":"vol-000",
+                "type":"gold",
+                "volumeid":"mock-vol-000",
+                "serviceName":"mock",
+            }
+
+## Volume Label Application [/admin/volumelabel]
+
+### Apply an administrator chosen key-value label to a specified Volume [POST]
+
+You may associate key-value labels with a volume using this action. It takes a JSON
+object containing a specification for the volume and one or more key value labels.
+
+    + Body
+
+        {
+            "volumeID": "mock-vol-000",
+            "labels":
+                {
+                    "color": "magenta",
+                    "location": "area51"
+                }
+        }
+
++ Response 200 (application/json)
+
+    + Body
+
+            {
+                "availabilityZone":"zone-000",
+                "name":"Volume 0",
+                "size":10240,
+                "id":"vol-000",
+                "type":"gold",
+                "volumeid":"mock-vol-000",
+                "serviceName":"mock",
+                "labels":
+                    {
+                        "color":"magenta",
+                        "location":"area51"
+                    }
+            }
+
+## Volume Label Removal [/admin/volumelabelremove]
+
+### Remove label(s) from a Managed Volume [POST]
+
+You may remove labels from a managed volume using this action. It takes a JSON
+object containing a specification for the volume, and the key of labels to be removed.
+
+    + Body
+
+        {
+            "volumeID": "mock-vol-000",
+            "schedulers":
+                [
+                    "location"
+                ]
+        }
+
++ Response 200 (application/json)
+
+    + Body
+
+            {
+                "availabilityZone":"zone-000",
+                "name":"Volume 0",
+                "size":10240,
+                "id":"vol-000",
+                "type":"gold",
+                "volumeid":"mock-vol-000",
+                "serviceName":"mock",
+                "labels":
+                    {
+                        "color":"magenta"
+                    }
+            }

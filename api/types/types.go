@@ -4,6 +4,13 @@ import (
 	lstypes "github.com/emccode/libstorage/api/types"
 )
 
+// VersionResponse
+type VersionResponse struct {
+	VersionPollyAdminAPI     string `json:"versionPollyAdminAPI,omitempty"`
+	VersionPollySchedulerAPI string `json:"versionPollySchedulerAPI,omitempty"`
+	VersionPollyBuild        string `json:"versionPollyBuild,omitempty"`
+}
+
 // VolumeOfferRequest contains offer information
 type VolumeOfferRequest struct {
 	VolumeID   string   `json:"volumeID,omitempty"`
