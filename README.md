@@ -52,5 +52,13 @@ Planned supported storage platforms:
  - Others
  - VirtualBox
 
+## Installation
+The following command will install Polly.  If using
+`CentOS`, `RedHat`, `Ubuntu`, or `Debian` the necessary service manager is used
+to bootstrap the process on startup.  
+
+`curl -sSL https://dl.bintray.com/emccode/polly/install | sh -`
+
+
 ## libStorage
 Polly makes use of the open source storage plugin framework [libStorage](https://github.com/emccode/libstorage) to enable storage orchestrator tools and container runtimes to make requests of storage. Any storage platform that has a driver implementation for the libStorage framework will work with Polly.

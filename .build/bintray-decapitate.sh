@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BINTRAY_ACCOUNT=dvonthenen
+BINTRAY_ACCOUNT=emccode
 BINTRAY_REPO=polly
 BINTRAY_URL=https://api.bintray.com/content/$BINTRAY_ACCOUNT/$BINTRAY_REPO
 BINTRAY_URL_STABLE=$BINTRAY_URL/stable/latest
