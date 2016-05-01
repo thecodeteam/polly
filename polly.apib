@@ -1,0 +1,100 @@
+FORMAT: 1A
+HOST: http://pollyhost.org:7980/
+
+# Polly
+
+Polly is an API allowing administrators and container schedulers to centrally optimize and govern consumption of storage.
+Polly implements a centralized storage scheduling service that integrates with popular container schedulers of different application platforms for containerized workloads.
+It is an open source framework that supports use of external storage, with scheduled containerized workloads, at scale.
+It can be used to centralize the control of creating, mapping, snapshotting and deleting persistent data volumes on a multitude of storage platforms.
+
+## Questions Collection [/admin/volumes]
+
+### List All Managed Volumes [GET]
+
++ Response 200 (application/json)
+
+        [
+            {
+                "id":     "vol-000",
+                "name":   "mesos-casandra",
+                "iops": 135,
+                "networkName", "vlan15",
+                "size":   10240,
+                "status": "online",
+                "type":   "nas",
+                "availabilityZone": "east",
+                "fields": {
+                    "priority": 2,
+                    "owner":    "sakutz@gmail.com"
+                }
+                "volumeid": "pollyvol-005",
+                "serviceName": "ec2-00",
+                "schedulers": [
+                        "kubernetes1",
+                        "mesos14"
+                ],
+                "labels": {
+                    "admin-applied-label1": "blue",
+                    "admin-applied-label2": "aisle-17"
+                }
+            }
+        ]
+
+### Create a New Volume [POST]
+
+You may create a volume using this action. It takes a JSON
+object containing a specification.
+
+
+    + Body
+
+            {
+                "service": "ec2-00",
+                "name": "mysql-vol",
+                "volumeType": "nas",
+                "size": 10240,
+                "iops": 135,
+                "availabilityZone": "east",
+                "schedulers": [
+                    "mesos-15"
+                ],
+                "labels": {
+                    "pollyadminappliedlabel1": "foo"
+                },
+                "fields": {
+                    "storageadminappliedlabel1": "bar"
+                }
+            }
+
+
++ Response 201 (application/json)
+
+    + Headers
+
+            Location: /admin/volumes/pollyvol-005
+
+    + Body
+
+            {
+                "id":     "vol-000",
+                "name":   "mysql-vol",
+                "iops": 135,
+                "availabilityZone": "east",
+                "networkName", "",
+                "size":   10240,
+                "status": "online",
+                "type":   "nas",
+                "fields": {
+                    "storageadminappliedlabel1":    "bar"
+                }
+                "volumeid": "pollyvol-005",
+                "serviceName": "ec2-00",
+                "schedulers": [
+                        "mesos-15"
+                ],
+                "labels": {
+                    "pollyadminappliedlabel1": "bar"
+                }
+            }
+  
