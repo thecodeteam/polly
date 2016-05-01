@@ -114,6 +114,14 @@ func (ps *PollyStore) Put(key string, bytes []byte) error {
 	return ps.store.Put(key, bytes, nil)
 }
 
+// Delete removes a key value pair
+func (ps *PollyStore) Delete(key string) error {
+	log.WithFields(log.Fields{
+		"key": key,
+	}).Debug("deleting key value")
+	return ps.store.Delete(key)
+}
+
 //GenerateObjectKey generates the internal path (=key) for an object
 func (ps *PollyStore) GenerateObjectKey(mytype int, guid string) (path string, err error) {
 	if guid == "" {
