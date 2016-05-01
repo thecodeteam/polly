@@ -50,6 +50,9 @@ deploy:
       all_branches: true
       condition: $TRAVIS_TAG =~ ^v?[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]$ && ($TRAVIS_REPO_SLUG = 'emccode/polly' || $IGNORE_REPO_SLUG_CONDITION = true)
 
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
+
 cache:
   apt: true
   directories:
