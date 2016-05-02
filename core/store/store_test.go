@@ -98,6 +98,23 @@ func TestGetVolumeIDs(t *testing.T) {
 	assert.Equal(t, len(ids), 1)
 }
 
+func TestRemovingSchedulers(t *testing.T) {
+	volume := newVolume("pollytestpkg1", "testid1")
+	volume.Schedulers = []string{"testScheduler"}
+
+	err := ps.SaveVolumeMetadata(volume)
+	assert.NoError(t, err)
+
+	volume.Schedulers = nil
+	err = ps.SaveVolumeMetadata(volume)
+	assert.NoError(t, err)
+
+	volume = newVolume("pollytestpkg1", "testid1")
+	_, err = ps.SetVolumeMetadata(volume)
+	assert.NoError(t, err)
+	assert.Equal(t, volume.Schedulers, nil)
+}
+
 func TestSaveVolumeMetadata(t *testing.T) {
 	volume := newVolume("pollytestpkg1", "testid1")
 	volume.Schedulers = []string{"testScheduler"}

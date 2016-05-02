@@ -153,13 +153,21 @@ func (ps *PollyStore) SaveVolumeMetadata(volume *types.Volume) error {
 		return err
 	}
 
-	js, err := json.Marshal(&volume.Schedulers)
-	if err != nil {
-		return err
-	}
-	err = ps.Put(key+"Schedulers", []byte(js))
-	if err != nil {
-		return err
+	if volume.Schedulers == nil || len(volume.Schedulers) == 0 {
+		err = ps.Delete(key + "Schedulers")
+		if err != nil {
+			return err
+		}
+	} else {
+		js, err := json.Marshal(&volume.Schedulers)
+		if err != nil {
+			return err
+		}
+
+		err = ps.Put(key+"Schedulers", []byte(js))
+		if err != nil {
+			return err
+		}
 	}
 
 	err = ps.Put(key+"ServiceName", []byte(volume.ServiceName))
