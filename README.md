@@ -1,5 +1,5 @@
 # polly - Polymorphic Volume Scheduling
-[![Build Status](https://travis-ci.org/emccode/polly.svg?branch=master)](https://travis-ci.org/emccode/polly) [![Go Report Card](http://goreportcard.com/badge/emccode/polly)](http://goreportcard.com/report/emccode/polly) ![codecov.io](https://codecov.io/github/emccode/polly/coverage.svg?branch=master) [ ![Download](http://api.bintray.com/packages/emccode/polly/stable/images/download.svg) ](https://dl.bintray.com/emccode/polly/stable/latest/)
+[![Build Status](https://travis-ci.org/emccode/polly.svg?branch=master)](https://travis-ci.org/emccode/polly) [![Go Report Card](http://goreportcard.com/badge/emccode/polly)](http://goreportcard.com/report/emccode/polly) [![codecov.io](https://codecov.io/github/emccode/polly/coverage.svg?branch=master)](https://codecov.io/github/emccode/rexray?branch=master) [![Download](http://api.bintray.com/packages/emccode/polly/stable/images/download.svg) ](https://dl.bintray.com/emccode/polly/stable/latest/)
 
 ![polly](docs/images/Polly the Parrot_Containers.png)
 
