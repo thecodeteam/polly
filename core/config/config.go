@@ -2,6 +2,7 @@ package config
 
 import (
 	"bytes"
+
 	gofig "github.com/akutz/gofig"
 	goof "github.com/akutz/goof"
 )
@@ -22,7 +23,7 @@ polly:
     server:
       endpoints:
         localhost:
-          address: tcp://localhost:7979
+          address: tcp://localhost:7978
       services:
         mock:
           libstorage:
