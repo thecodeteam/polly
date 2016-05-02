@@ -9,6 +9,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	// gofig "github.com/akutz/gofig"
 	"fmt"
+
 	"github.com/akutz/goof"
 	config "github.com/emccode/polly/core/config"
 	"github.com/emccode/polly/core/store"
