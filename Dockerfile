@@ -1,4 +1,4 @@
-# Start from a golang:1.6.1 
+# Start from a golang:1.6.1
 # and a workspace (GOPATH) configured at /go.
 FROM golang:1.6.1
 
@@ -8,7 +8,7 @@ RUN mkdir -p $GOPATH/src/github.com/emccode
 # Change the working directory
 WORKDIR $GOPATH/src/github.com/emccode
 
-# Clone the latest 
+# Clone the latest
 RUN git clone https://github.com/emccode/polly
 
 # Change the Working directory
@@ -23,4 +23,4 @@ RUN cp /go/bin/polly /usr/local/ && chmod u+x /usr/local/polly
 # Start the Polly Service
 ENTRYPOINT polly service start -f
 
-EXPOSE 7979 7980
+EXPOSE 7978 7979
