@@ -48,7 +48,7 @@ func globalRegistration() *gofig.Registration {
 	r := gofig.NewRegistration("Global")
 	r.Yaml(`
 polly:
-  host: :7980
+  host: :7978
   logLevel: warn
 `)
 	r.Key(gofig.String, "l", "warn",

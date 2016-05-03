@@ -2,6 +2,7 @@ package config
 
 import (
 	"bytes"
+
 	gofig "github.com/akutz/gofig"
 	goof "github.com/akutz/goof"
 )
