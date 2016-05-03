@@ -7,15 +7,16 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-
-	gofig "github.com/akutz/gofig"
-	"github.com/akutz/goof"
-	"github.com/docker/libkv"
 	store "github.com/docker/libkv/store"
 	"github.com/docker/libkv/store/boltdb"
 	"github.com/docker/libkv/store/consul"
 	"github.com/docker/libkv/store/etcd"
 	"github.com/docker/libkv/store/zookeeper"
+
+	gofig "github.com/akutz/gofig"
+	"github.com/akutz/goof"
+	"github.com/docker/libkv"
+	version "github.com/emccode/polly/core/version"
 )
 
 const (
@@ -90,6 +91,27 @@ func NewWithConfig(config gofig.Config) (pollystore *PollyStore, err error) {
 		return nil, err
 	}
 	ps.store = myStore
+
+	//check the current version of the store
+	versionKey := ps.root + "version"
+	pair, err := ps.store.Get(versionKey)
+	if pair != nil && err != nil {
+		log.WithFields(log.Fields{
+			"store": string(pair.Value),
+		}).Debug("store version")
+		log.WithFields(log.Fields{
+			"version": version.VersionStr,
+		}).Debug("current version")
+		//TODO: if you need to some form of metadata update, do it here
+	}
+
+	//record the current version for the metadata
+	ps.Put(ps.root, []byte(""))
+	err = ps.store.Put(versionKey, []byte(version.VersionStr), nil)
+	if err != nil {
+		log.WithError(err).Fatal("failed to set version on store")
+		return nil, err
+	}
 
 	initlist := []int{VolumeType, VolumeInternalLabelsType, VolumeAdminLabelsType}
 	for _, category := range initlist {
@@ -233,4 +255,14 @@ func (ps *PollyStore) EndPoints() string {
 //Bucket this get the type of backing store to use
 func (ps *PollyStore) Bucket() string {
 	return ps.config.GetString("bucket")
+}
+
+// Version of the metadata in the store
+func (ps *PollyStore) Version() (string, error) {
+	versionKey := ps.root + "version"
+	pair, err := ps.store.Get(versionKey)
+	if err != nil {
+		return "", err
+	}
+	return string(pair.Value), nil
 }

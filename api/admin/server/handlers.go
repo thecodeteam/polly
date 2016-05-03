@@ -235,8 +235,8 @@ func (rtr *Router) getVersionHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	ver := &types.VersionResponse{
-		VersionPollyAdminAPI:     "v0.1.0",
-		VersionPollySchedulerAPI: "v0.1.0",
+		VersionPollyAdminAPI:     version.VersionStr,
+		VersionPollySchedulerAPI: version.VersionStr,
 		VersionPollyBuild:        version.SemVer,
 	}
 
