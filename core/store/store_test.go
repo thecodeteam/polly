@@ -80,6 +80,12 @@ func TestGenerateObjectKeyInvalid(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestVersionOfStore(t *testing.T) {
+	version, err := ps.Version()
+	assert.Error(t, err)
+	assert.Equal(t, version, "v0.1.0")
+}
+
 func TestNotExist(t *testing.T) {
 	volume := newVolume("pollytestpkg2", "testid2")
 

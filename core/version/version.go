@@ -5,6 +5,11 @@ import (
 	"time"
 )
 
+const (
+	// VersionStr is a centralized place to call out the version
+	VersionStr = "v0.1.0"
+)
+
 var (
 	// SemVer is the semantic version string
 	SemVer string
