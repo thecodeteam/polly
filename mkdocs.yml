@@ -11,9 +11,8 @@ pages:
 - User Guide:
     - Installation: user-guide/installation.md
     - Configuration: user-guide/configuration.md
-    - Storage providers: user-guide/storage-providers.md
-    - Container schedulers: user-guide/container-schedulers.md
-    - Cloud platforms: user-guide/cloud-platforms.md
+    - Troubleshooting: user-guide/troubleshooting.md
+    - REST API: user-guide/restapi.md
 - Developer guide:
     - Project guidelines: developer-guide/project-guidelines.md
     - Build reference: developer-guide/build-reference.md
