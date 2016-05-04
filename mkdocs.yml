@@ -12,6 +12,7 @@ pages:
     - Installation: user-guide/installation.md
     - Configuration: user-guide/configuration.md
     - Troubleshooting: user-guide/troubleshooting.md
+    - REST API: user-guide/restapi.md
 - Developer guide:
     - Project guidelines: developer-guide/project-guidelines.md
     - Build reference: developer-guide/build-reference.md

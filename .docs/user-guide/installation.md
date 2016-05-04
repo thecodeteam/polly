@@ -1,7 +1,7 @@
 # Installation
 
 ## Overview
-Polly is written in Go, so there are typically no dependencies that must be installed alongside its single binary file. The manual methods can be extremely simple through tools like `curl`. You also have the opportunity to perform install steps individually. Following the manual installs, [configuration](./config.md) must take place.
+Polly is written in Go, so there are typically no dependencies that must be installed alongside its single binary file. The `curl` utility can be used to perform a simple manual installation. You also have the opportunity to perform install steps individually. Following an install, [configuration](./config.md) must take place before use.
 
 ---
 
@@ -33,13 +33,13 @@ is the preferred normal location, but this path is not required.
 
 `Polly` is also fairly simple to build from source:
 
-#### Build using a Docker container
+#### Option 1: Build using a Docker container
 
 ```shell
 SRC=$(mktemp -d 2> /dev/null || mktemp -d -t polly 2> /dev/null) && cd $SRC && docker run --rm -it -e GO15VENDOREXPERIMENT=1 -v $SRC:/usr/src/polly -w /usr/src/polly golang:1.5.1 bash -c "git clone https://github.com/emccode/polly.git -b master . && make build-all”
 ```
 
-#### Conventional build from source
+#### Option 2: Conventional build from source
 
 If you'd prefer to not use `Docker` to build `Polly,` [Install go 1.6](https://golang.org/doc/install) or later and set the GOPATH environment variable. 
 
@@ -52,16 +52,19 @@ export GO15VENDOREXPERIMENT=1
 ##### clone the polly repo
 
 ```shell
-mkdir -p ~/work/src/github.com/emccode
-cd ~/work/src/github.com/emccode
+cd $GOPATH/src/github.com/emccode
 git clone https://github.com/emccode/polly.git
-
-# change directories into the freshly-cloned repo
-cd polly
-
-# build polly
-make build-all
 ```
+
+###### change directories into the freshly-cloned repo
+
+`cd polly`
+
+###### build polly
+
+`make build-all`
+
+#### build output
 
 After either of the above methods for building `polly` there should be a `.bin` directory in the current directory, and inside `.bin` will be binaries for Linux-i386, Linux-x86-64, and Darwin-x86-64.
 
