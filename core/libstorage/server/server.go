@@ -12,7 +12,10 @@ func New(config gofig.Config) (gofig.Config, error) {
 		return config, NewWithConfig(config.Scope("polly"))
 	}
 
-	cfg, _, errs := server.Start("", false, "mock", "mock")
+	cfg, _, err, errs := server.Start("", false, "mock", "mock")
+	if err != nil {
+		return nil, err
+	}
 	go func() {
 		err := <-errs
 		panic(err)
@@ -23,7 +26,10 @@ func New(config gofig.Config) (gofig.Config, error) {
 
 // NewWithConfig starts a server with a configuration
 func NewWithConfig(config gofig.Config) error {
-	_, errs := server.StartWithConfig(config)
+	_, err, errs := server.StartWithConfig(config)
+	if err != nil {
+		return err
+	}
 	go func() {
 		err := <-errs
 		panic(err)

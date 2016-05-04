@@ -5,7 +5,7 @@ import:
     repo:    https://github.com/akutz/logrus
     vcs:     git
   - package: github.com/akutz/gofig
-    ref:     e403cdba84cf4fbf931bf7bf5d86066dbab5b850
+    ref:     96b760df1cdbc843d5f633b7705f95c9090cb21e 
     vcs:     git
   - package: github.com/akutz/gotil
   - package: github.com/akutz/goof
@@ -15,7 +15,7 @@ import:
   - package: github.com/cesanta/validate-json
   - package: github.com/stretchr/testify
   - package: github.com/emccode/libstorage
-    ref:     2500328e18a7644a5ef18d8af49179b2b07794f4
+    ref:     9a626ccb753488ccd0e8668e7cb092965ed40f3b 
     vcs:     git
     repo:    https://github.com/emccode/libstorage
   - package: github.com/docker/libkv
