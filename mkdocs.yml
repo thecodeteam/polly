@@ -13,6 +13,7 @@ pages:
     - Configuration: user-guide/configuration.md
     - Troubleshooting: user-guide/troubleshooting.md
     - REST API: user-guide/restapi.md
+    - Command Line Interface: user-guide/cli.md
 - Developer guide:
     - Project guidelines: developer-guide/project-guidelines.md
     - Build reference: developer-guide/build-reference.md
