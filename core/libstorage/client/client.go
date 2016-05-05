@@ -12,7 +12,7 @@ import (
 
 // Client is the polly version of libstorage Client
 type Client struct {
-	client.Client
+	apitypes.Client
 	ctx apitypes.Context
 }
 
