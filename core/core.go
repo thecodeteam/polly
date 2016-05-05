@@ -2,20 +2,27 @@ package core
 
 import (
 	"fmt"
+	"net/http"
+	"os"
+	"strconv"
+
 	log "github.com/Sirupsen/logrus"
 	"github.com/akutz/gofig"
 	"github.com/akutz/goof"
 	"github.com/akutz/gotil"
 	"github.com/emccode/libstorage/api/context"
+	apivolroute "github.com/emccode/libstorage/api/server/router/volume"
+	apitypes "github.com/emccode/libstorage/api/types"
 	adminserver "github.com/emccode/polly/api/admin/server"
 	"github.com/emccode/polly/core/libstorage/client"
 	"github.com/emccode/polly/core/libstorage/server"
 	store "github.com/emccode/polly/core/store"
 	ctypes "github.com/emccode/polly/core/types"
+	volumes "github.com/emccode/polly/core/volumes"
 	util "github.com/emccode/polly/util"
-	"os"
-	"strconv"
 )
+
+var vsc *volumes.Vsc
 
 func init() {
 	gofig.SetGlobalConfigPath(util.EtcDirPath())
@@ -121,7 +128,11 @@ func Start(p *ctypes.Polly) error {
 	}
 	p.Services = services
 
+	apivolroute.OnVolume = filterVolume
+	vsc = volumes.New(p)
+
 	_ = adminserver.Start(p)
+
 	return nil
 }
 
@@ -132,4 +143,19 @@ func Run(p *ctypes.Polly) error {
 	}
 
 	select {}
+}
+
+// filterVolume filters and generates a list of Polly vols from libstorage vols
+func filterVolume(
+	ctx apitypes.Context,
+	req *http.Request,
+	store apitypes.Store,
+	volume *apitypes.Volume) (bool, error) {
+
+	volumeNew := client.NewVolume(volume, ctx.ServiceName())
+	volume.Fields = make(map[string]string)
+	volume.Fields["polly.id"] = volumeNew.ID
+	//GetMetadata
+
+	return true, nil
 }
