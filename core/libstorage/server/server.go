@@ -6,6 +6,19 @@ import (
 	"github.com/emccode/libstorage/api/server"
 )
 
+// func onVolume(
+// 	ctx apitypes.Context,
+// 	req *http.Request,
+// 	store apitypes.Store,
+// 	volume *apitypes.Volume) (bool, error) {
+//
+// 	if volume.Fields == nil {
+// 		volume.Fields = map[string]string{}
+// 	}
+//
+// 	return true, nil
+// }
+
 // New starts a server with default configuration
 func New(config gofig.Config) (gofig.Config, error) {
 	if config != nil {
