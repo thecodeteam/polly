@@ -13,7 +13,8 @@ import (
 // Client is the polly version of libstorage Client
 type Client struct {
 	apitypes.Client
-	ctx apitypes.Context
+	ctx    apitypes.Context
+	config gofig.Config
 }
 
 // NewWithConfig creates a new client with specified configuration object
@@ -25,7 +26,7 @@ func NewWithConfig(ctx apitypes.Context, config gofig.Config) (*Client, error) {
 			"error dialing libStorage service", err)
 	}
 
-	return &Client{c, ctx}, nil
+	return &Client{c, ctx, config}, nil
 }
 
 // NewVolume creates a Polly volume from a libStorage volume
@@ -45,8 +46,9 @@ func NewVolume(vol *apitypes.Volume, service string) *types.Volume {
 
 // VolumesByService returns a list of Polly volumes from libstorage
 func (c Client) VolumesByService(serviceName string) ([]*types.Volume, error) {
-	volumeMap, err := c.Client.API().VolumesByService(c.ctx, serviceName,
-		false)
+	c.Client.API().AddHeader("requestPath", c.requestPath())
+	volumeMap, err := c.Client.API().VolumesByService(
+		c.ctx, serviceName, false)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +62,9 @@ func (c Client) VolumesByService(serviceName string) ([]*types.Volume, error) {
 
 // Volumes returns a list of Polly volumes from libstorage
 func (c Client) Volumes() ([]*types.Volume, error) {
-	serviceVolumeMap, err := c.Client.API().Volumes(c.ctx, false)
+	c.Client.API().AddHeader("requestPath", c.requestPath())
+	serviceVolumeMap, err := c.Client.API().Volumes(
+		c.ctx, false)
 	if err != nil {
 		return nil, err
 	}
@@ -76,6 +80,7 @@ func (c Client) Volumes() ([]*types.Volume, error) {
 
 // VolumeInspect returns a Polly volume
 func (c Client) VolumeInspect(serviceName, volumeID string, attachments bool) (*types.Volume, error) {
+	c.Client.API().AddHeader("requestPath", c.requestPath())
 	vol, err := c.Client.API().VolumeInspect(c.ctx, serviceName, volumeID, attachments)
 	if err != nil {
 		return nil, err
@@ -86,6 +91,7 @@ func (c Client) VolumeInspect(serviceName, volumeID string, attachments bool) (*
 
 // VolumeCreate creates a Polly Volume
 func (c *Client) VolumeCreate(serviceName string, request *apitypes.VolumeCreateRequest) (*types.Volume, error) {
+	c.Client.API().AddHeader("requestPath", "admin")
 	vol, err := c.Client.API().VolumeCreate(c.ctx, serviceName, request)
 	if err != nil {
 		return nil, err
@@ -96,10 +102,15 @@ func (c *Client) VolumeCreate(serviceName string, request *apitypes.VolumeCreate
 
 // VolumeRemove removes a Polly Volume
 func (c *Client) VolumeRemove(serviceName string, volumeID string) error {
+	c.Client.API().AddHeader("requestPath", c.requestPath())
 	err := c.Client.API().VolumeRemove(c.ctx, serviceName, volumeID)
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (c Client) requestPath() string {
+	return c.config.GetString("libstorage.client.requestPath")
 }
