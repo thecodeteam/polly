@@ -257,6 +257,9 @@ func (ps *PollyStore) SetVolumeMetadata(volume *types.Volume) (bool, error) {
 		}
 		switch key {
 		case "Schedulers":
+			if len(pair.Value) == 0 {
+				break
+			}
 			err := json.Unmarshal(pair.Value, &volume.Schedulers)
 			if err != nil {
 				return exists, err

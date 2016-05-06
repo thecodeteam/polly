@@ -7,12 +7,15 @@ import (
 	"github.com/akutz/goof"
 	"github.com/akutz/gotil"
 	"github.com/emccode/libstorage/api/context"
+	apivolroute "github.com/emccode/libstorage/api/server/router/volume"
+	apitypes "github.com/emccode/libstorage/api/types"
 	adminserver "github.com/emccode/polly/api/admin/server"
 	"github.com/emccode/polly/core/libstorage/client"
 	"github.com/emccode/polly/core/libstorage/server"
 	store "github.com/emccode/polly/core/store"
 	ctypes "github.com/emccode/polly/core/types"
 	util "github.com/emccode/polly/util"
+	"net/http"
 	"os"
 	"strconv"
 )
@@ -109,6 +112,10 @@ func Start(p *ctypes.Polly) error {
 	p.LsConfig = lscfg
 
 	ctx := context.Background()
+	if lscfg.GetString("libstorage.client.requestPath") == "" {
+		lscfg.Set("libstorage.client.requestPath", "admin")
+	}
+
 	lsc, err := client.NewWithConfig(ctx, lscfg)
 	if err != nil {
 		return err
@@ -121,8 +128,60 @@ func Start(p *ctypes.Polly) error {
 	}
 	p.Services = services
 
+	// filterVolume sets a filter in place for requests
+	filterVolume := func(
+		ctx apitypes.Context,
+		req *http.Request,
+		store apitypes.Store,
+		volume *apitypes.Volume) (bool, error) {
+
+		// set the polly volume settings
+		volumeNew := client.NewVolume(volume, ctx.ServiceName())
+		volume.Fields = make(map[string]string)
+		volume.Fields["polly.id"] = volumeNew.VolumeID
+		for k, v := range volumeNew.Labels {
+			volume.Fields[fmt.Sprintf("polly.labels.%s", k)] = v
+		}
+
+		// apply filtering
+		rp := req.Header.Get("requestpath")
+		ctx.WithField("requestPath", rp).Debug("volume response on request path")
+		if ctx.Route() == "volumeCreate" {
+			if err := p.Store.SaveVolumeMetadata(volumeNew); err != nil {
+				return false, err
+			}
+			return updateVolume(ctx, p, volume, true)
+		} else if rp == "admin" {
+			ctx.WithField("requestPath", rp).Debug("volumes from admin request")
+			return updateVolume(ctx, p, volume, false)
+		}
+		ctx.WithField("requestPath", rp).Debug("volumes from non-admin request")
+		return updateVolume(ctx, p, volume, true)
+	}
+
+	apivolroute.OnVolume = filterVolume
+
 	_ = adminserver.Start(p)
 	return nil
+}
+
+func updateVolume(ctx apitypes.Context, p *ctypes.Polly,
+	volume *apitypes.Volume, mustExist bool) (bool, error) {
+
+	volumeNew := client.NewVolume(volume, ctx.ServiceName())
+	if exists, err := p.Store.Exists(volumeNew); err != nil {
+		return false, err
+	} else if mustExist && !exists {
+		return false, err
+	}
+
+	if err := p.Store.SetVolumeAdminLabels(volumeNew); err != nil {
+		return false, err
+	}
+	if _, err := p.Store.SetVolumeMetadata(volumeNew); err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 // Run starts the Polly core services and blocks

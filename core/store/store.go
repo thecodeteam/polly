@@ -28,6 +28,13 @@ const (
 	VolumeAdminLabelsType = 3
 )
 
+const (
+	storeVolumeLibStorage         = "volumelibstorage"
+	storeVolumeInternalLabelsType = "volumeinternallabels"
+	storeVolumeAdminLabelsType    = "volumeadminlabels"
+	rootKey                       = "polly"
+)
+
 var (
 	//ErrObjectInvalid is an error for not being able to determine the key for an object
 	ErrObjectInvalid = errors.New("Unable to determine root object path")
@@ -62,7 +69,7 @@ func NewWithConfig(config gofig.Config) (pollystore *PollyStore, err error) {
 
 	ps := &PollyStore{}
 	ps.config = config
-	ps.root = "polly/"
+	ps.root = rootKey + "/"
 
 	backend := store.Backend(ps.StoreType())
 	endpoints := []string{ps.EndPoints()}
@@ -92,9 +99,7 @@ func NewWithConfig(config gofig.Config) (pollystore *PollyStore, err error) {
 	}
 	ps.store = myStore
 
-	//check the current version of the store
-	versionKey := ps.root + "version"
-	pair, err := ps.store.Get(versionKey)
+	pair, err := ps.store.Get(ps.versionKey())
 	if pair != nil && err != nil {
 		log.WithFields(log.Fields{
 			"store": string(pair.Value),
@@ -107,23 +112,34 @@ func NewWithConfig(config gofig.Config) (pollystore *PollyStore, err error) {
 
 	//record the current version for the metadata
 	ps.Put(ps.root, []byte(""))
-	err = ps.store.Put(versionKey, []byte(version.VersionStr), nil)
+	err = ps.store.Put(ps.versionKey(), []byte(version.VersionStr), nil)
 	if err != nil {
 		log.WithError(err).Fatal("failed to set version on store")
 		return nil, err
 	}
 
-	initlist := []int{VolumeType, VolumeInternalLabelsType, VolumeAdminLabelsType}
-	for _, category := range initlist {
-		key, err := ps.GenerateRootKey(category)
-		if err != nil {
-			log.WithError(err).Fatal("failed key gen on store init")
-			return nil, err
-		}
-		ps.Put(key, []byte(""))
+	if err := ps.initKeys([]int{VolumeType,
+		VolumeInternalLabelsType, VolumeAdminLabelsType}); err != nil {
+		return nil, err
 	}
 
 	return ps, nil
+}
+
+func (ps *PollyStore) initKeys(keys []int) error {
+	for _, cat := range keys {
+		key, err := ps.GenerateRootKey(cat)
+		if err != nil {
+			log.WithError(err).Fatal("failed key gen on store init")
+			return err
+		}
+		ps.Put(key, []byte(""))
+	}
+	return nil
+}
+
+func (ps *PollyStore) versionKey() string {
+	return ps.root + "version"
 }
 
 // Put saves key value pairs
@@ -168,11 +184,11 @@ func (ps *PollyStore) generateKey(mytype int, guid string) (path string, err err
 
 	switch mytype {
 	case VolumeType:
-		parts = append(parts, "volumelibstorage")
+		parts = append(parts, storeVolumeLibStorage)
 	case VolumeInternalLabelsType:
-		parts = append(parts, "volumeinternal")
+		parts = append(parts, storeVolumeInternalLabelsType)
 	case VolumeAdminLabelsType:
-		parts = append(parts, "volumeadmin")
+		parts = append(parts, storeVolumeAdminLabelsType)
 	default:
 		return "", ErrObjectInvalid
 	}
@@ -222,18 +238,27 @@ func (ps *PollyStore) List(key string) ([]*store.KVPair, error) {
 // EraseStore erases the store
 func (ps *PollyStore) EraseStore() error {
 	log.WithField("store", ps.store).Warning("erasing polly store trees")
-	if err := ps.store.DeleteTree("/volumeinternal"); err != nil {
+	for _, t := range []int{
+		VolumeInternalLabelsType, VolumeType, VolumeInternalLabelsType} {
+		if err := ps.EraseType(t); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// EraseType erases a root of the store
+func (ps *PollyStore) EraseType(mytype int) error {
+	var rkey string
+	var err error
+	if rkey, err = ps.GenerateRootKey(mytype); err != nil {
 		return err
 	}
-	if err := ps.store.DeleteTree("/volumesnapshot"); err != nil {
+	if err := ps.store.DeleteTree(rkey); err != nil {
 		return err
 	}
-	if err := ps.store.DeleteTree("/volumeadmin"); err != nil {
-		return err
-	}
-	if err := ps.store.DeleteTree("/volume"); err != nil {
-		return err
-	}
+	ps.Put(rkey, []byte(""))
 	return nil
 }
 

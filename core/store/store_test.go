@@ -60,19 +60,23 @@ func TestMain(m *testing.M) {
 	vol := newVolume("pollytestpkg1", "testid1")
 	_ = ps.RemoveVolumeMetadata(vol)
 
+	if err := ps.EraseStore(); err != nil {
+		log.Fatal("Could not clear polly store")
+	}
+
 	m.Run()
 }
 
 func TestGenerateRootKey(t *testing.T) {
 	key, err := ps.GenerateRootKey(VolumeInternalLabelsType)
 	assert.NoError(t, err)
-	assert.Equal(t, "/volumeinternal/", key)
+	assert.Equal(t, "polly/volumeinternallabels/", key)
 }
 
 func TestGenerateObjectKey(t *testing.T) {
 	key, err := ps.GenerateObjectKey(VolumeInternalLabelsType, "pollytestpkg1-testid1")
 	assert.NoError(t, err)
-	assert.Equal(t, "/volumeinternal/pollytestpkg1-testid1/", key)
+	assert.Equal(t, "polly/volumeinternallabels/pollytestpkg1-testid1/", key)
 }
 
 func TestGenerateObjectKeyInvalid(t *testing.T) {
@@ -82,15 +86,16 @@ func TestGenerateObjectKeyInvalid(t *testing.T) {
 
 func TestVersionOfStore(t *testing.T) {
 	version, err := ps.Version()
-	assert.Error(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, version, "v0.1.0")
 }
 
 func TestNotExist(t *testing.T) {
-	volume := newVolume("pollytestpkg2", "testid2")
+	volume := newVolume("pollytestpkg2", "testiddoesntexist")
 
-	_, err := ps.Exists(volume)
-	assert.Error(t, err)
+	exists, err := ps.Exists(volume)
+	assert.NoError(t, err)
+	assert.Equal(t, false, exists)
 }
 
 func TestGetVolumeIDs(t *testing.T) {
@@ -118,7 +123,7 @@ func TestRemovingSchedulers(t *testing.T) {
 	volume = newVolume("pollytestpkg1", "testid1")
 	_, err = ps.SetVolumeMetadata(volume)
 	assert.NoError(t, err)
-	assert.Equal(t, volume.Schedulers, nil)
+	assert.Len(t, volume.Schedulers, 0)
 }
 
 func TestSaveVolumeMetadata(t *testing.T) {
@@ -238,4 +243,12 @@ func TestEraseStore(t *testing.T) {
 
 	err = myPs.EraseStore()
 	assert.NoError(t, err)
+
+	ids, err := myPs.GetVolumeIds()
+	assert.NoError(t, err)
+	if err != nil {
+		t.FailNow()
+	}
+
+	assert.Len(t, ids, 0)
 }
