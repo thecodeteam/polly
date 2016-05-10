@@ -1,13 +1,12 @@
 # polly - Polymorphic Volume Scheduling
-[![Build Status](https://travis-ci.org/emccode/polly.svg?branch=master)](https://travis-ci.org/emccode/polly) [![Go Report Card](http://goreportcard.com/badge/emccode/polly)](http://goreportcard.com/report/emccode/polly) [![codecov.io](https://codecov.io/github/emccode/polly/coverage.svg?branch=master)](https://codecov.io/github/emccode/polly?branch=master) [![Download](http://api.bintray.com/packages/emccode/polly/stable/images/download.svg) ](https://dl.bintray.com/emccode/polly/stable/latest/)
+[![Build Status](https://travis-ci.org/emccode/polly.svg?branch=master)](https://travis-ci.org/emccode/polly) [![Go Report Card](http://goreportcard.com/badge/emccode/polly)](http://goreportcard.com/report/emccode/polly) [![codecov.io](https://codecov.io/github/emccode/polly/coverage.svg?branch=master)](https://codecov.io/github/emccode/polly?branch=master) [![Download](http://api.bintray.com/packages/emccode/polly/stable/images/download.svg) [![Docs](https://readthedocs.org/projects/polly-scheduler/badge/?version=latest)](http://polly-scheduler.readthedocs.io/en/latest/?badge=latest)
 
 ![polly](https://raw.githubusercontent.com/emccode/polly/master/.docs/images/polly.png)
 
 ## Storage scheduling for container schedulers
 `Polly` implements a centralized storage scheduling service that integrates with popular `container schedulers` of different application platforms for containerized workloads. It is an open source framework that supports use of external storage, with scheduled containerized workloads, at scale. It can be used to centralize the control of creating, mapping, snapshotting and deleting persistent data volumes on a multitude of storage platforms.
 
-## Full Docuemntation
-Continue reading the full documentation at [ReadTheDocs](http://polly-scheduler.readthedocs.io/en/latest/).
+Continue reading the full documentation at [ReadTheDocs](http://polly-scheduler.readthedocs.io/en/latest/?badge=latest).
 
 ## Key Features
 - Centralized control and distribution of storage resources
@@ -61,7 +60,11 @@ The following command will install Polly.  If using
 `CentOS`, `RedHat`, `Ubuntu`, or `Debian` the necessary service manager is used
 to bootstrap the process on startup.  
 
-`curl -sSL https://dl.bintray.com/emccode/polly/install | sh -`
+`curl -sSL https://dl.bintray.com/emccode/polly/install | sh -s stable`
+
+You can also install the latest release candidate using the following command.
+
+`curl -sSL https://dl.bintray.com/emccode/polly/install | sh -s staged`
 
 
 ## libStorage
