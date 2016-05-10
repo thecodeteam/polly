@@ -252,3 +252,13 @@ func PrintVersion(out io.Writer) {
 	fmt.Fprintf(out, "Commit: %s\n", version.ShaLong)
 	fmt.Fprintf(out, "Formed: %s\n", version.EpochToRfc1123())
 }
+
+//ContainsString searches an array for a matching string
+func ContainsString(s []string, e string) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
+}

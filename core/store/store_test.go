@@ -38,7 +38,8 @@ func newVolume(service, volumeID string) *types.Volume {
 	lsvol := &lstypes.Volume{
 		ID: volumeID,
 	}
-	return lsclient.NewVolume(lsvol, service)
+	vol, _ := lsclient.NewVolume(nil, lsvol, service)
+	return vol
 }
 
 func TestMain(m *testing.M) {
