@@ -58,7 +58,7 @@ func (c *CLI) initStoreCmds() {
 				kvl = append(kvl, kv...)
 
 				key, _ = c.p.Store.GenerateObjectKey(store.VolumeInternalLabelsType, vol)
-				kvl, _ = c.p.Store.List(key)
+				kv, _ = c.p.Store.List(key)
 
 				kvl = append(kvl, kv...)
 			}
