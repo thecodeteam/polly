@@ -180,7 +180,7 @@ func (rtr *Router) postVolumesHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, ok := rtr.p.Services[strings.ToLower(m.ServiceName)]; !ok {
+	if _, ok := rtr.p.LsClient.Services[strings.ToLower(m.ServiceName)]; !ok {
 		http.Error(w, "ServiceName is not defined", http.StatusNotFound)
 		return
 	}

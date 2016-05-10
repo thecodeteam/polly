@@ -5,7 +5,7 @@ import:
     repo:    https://github.com/akutz/logrus
     vcs:     git
   - package: github.com/akutz/gofig
-    ref:     96b760df1cdbc843d5f633b7705f95c9090cb21e 
+    ref:     96b760df1cdbc843d5f633b7705f95c9090cb21e
     vcs:     git
   - package: github.com/akutz/gotil
     ref:     6fa2e80bd3ac40f15788cfc3d12ebba49a0add92
@@ -21,7 +21,7 @@ import:
     vcs:     git
   - package: github.com/stretchr/testify
   - package: github.com/emccode/libstorage
-    ref:     670d123dbd7159c7d44b55639a8d2ce4ab73d6fd 
+    ref:     v0.1.0-rc2 
     vcs:     git
     repo:    https://github.com/emccode/libstorage
   - package: github.com/docker/libkv

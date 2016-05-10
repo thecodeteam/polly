@@ -73,17 +73,37 @@ func (v *Vsc) VolumesAll(vals url.Values) ([]*types.Volume, error) {
 	return volsOut, nil
 }
 
+//LibsVolumeID translates a Polly VolumeID to a libStorage VolumeID
+func (v *Vsc) LibsVolumeID(pVolumeID string) (string, string, error) {
+	d, vid, err := splitVolumeID(pVolumeID)
+	if err != nil {
+		return "", "", err
+	}
+
+	var s string
+	var ok bool
+	if s, ok = v.p.LsClient.DriverService[d]; !ok {
+		return "", "", goof.New("service not found")
+	}
+
+	return s, vid, nil
+}
+
 // VolumeInspect returns details about a volume
 func (v *Vsc) VolumeInspect(volumeID string) (*types.Volume, error) {
-	log.WithFields(log.Fields{
-		"volumeID": volumeID,
-	}).Debug("vsc.VolumeInspect()")
-	s, vid, err := splitVolumeID(volumeID)
+
+	s, libsvid, err := v.LibsVolumeID(volumeID)
 	if err != nil {
 		return nil, err
 	}
 
-	vol, err := v.p.LsClient.VolumeInspect(s, vid, false)
+	log.WithFields(log.Fields{
+		"pVolumeID":    volumeID,
+		"service":      s,
+		"libsVolumeID": libsvid,
+	}).Debug("vsc.VolumeInspect()")
+
+	vol, err := v.p.LsClient.VolumeInspect(s, libsvid, false)
 	if err != nil {
 		return nil, err
 	}
@@ -103,9 +123,15 @@ func (v *Vsc) VolumeInspect(volumeID string) (*types.Volume, error) {
 
 // VolumeOffer registers a volume for a scheduler
 func (v *Vsc) VolumeOffer(volumeID string, schedulers []string) (*types.Volume, error) {
+	s, libsvid, err := v.LibsVolumeID(volumeID)
+	if err != nil {
+		return nil, err
+	}
+
 	log.WithFields(log.Fields{
-		"volumeID":   volumeID,
-		"schedulers": schedulers,
+		"pVolumeID":    volumeID,
+		"service":      s,
+		"libsVolumeID": libsvid,
 	}).Debug("vsc.VolumeOffer()")
 
 	vol, err := v.VolumeInspect(volumeID)
@@ -133,10 +159,16 @@ func contains(s []string, e string) bool {
 
 // VolumeOfferRevoke revokes a volume offer from schedulers
 func (v *Vsc) VolumeOfferRevoke(volumeID string, schedulers []string) (*types.Volume, error) {
+	s, libsvid, err := v.LibsVolumeID(volumeID)
+	if err != nil {
+		return nil, err
+	}
+
 	log.WithFields(log.Fields{
-		"volumeID":   volumeID,
-		"schedulers": schedulers,
-	}).Debug("vsc.VolumeOfferRevoke()")
+		"pVolumeID":    volumeID,
+		"service":      s,
+		"libsVolumeID": libsvid,
+	}).Debug("vsc.VolumeRevoke()")
 
 	vol, err := v.VolumeInspect(volumeID)
 	if err != nil {
@@ -166,15 +198,20 @@ func splitVolumeID(volumeID string) (string, string, error) {
 		return "", "", goof.New("invalid volumeID")
 	}
 	return arr[0], arr[1], nil
-
 }
 
 // VolumeLabel creates labels on volumes
 func (v *Vsc) VolumeLabel(volumeID string, labels map[string]string) (*types.Volume, error) {
+	s, libsvid, err := v.LibsVolumeID(volumeID)
+	if err != nil {
+		return nil, err
+	}
+
 	log.WithFields(log.Fields{
-		"volumeID": volumeID,
-		"labels":   labels,
-	}).Debug("vsc.VolumeCreateLabels()")
+		"pVolumeID":    volumeID,
+		"service":      s,
+		"libsVolumeID": libsvid,
+	}).Debug("vsc.VolumeInspect()")
 
 	vol, err := v.VolumeInspect(volumeID)
 	if err != nil {
@@ -195,10 +232,16 @@ func (v *Vsc) VolumeLabel(volumeID string, labels map[string]string) (*types.Vol
 
 // VolumeLabelsRemove removes labels from volumes
 func (v *Vsc) VolumeLabelsRemove(volumeID string, labels []string) (*types.Volume, error) {
+	s, libsvid, err := v.LibsVolumeID(volumeID)
+	if err != nil {
+		return nil, err
+	}
+
 	log.WithFields(log.Fields{
-		"volumeID": volumeID,
-		"labels":   labels,
-	}).Debug("vsc.VolumeRemoveLabels()")
+		"pVolumeID":    volumeID,
+		"service":      s,
+		"libsVolumeID": libsvid,
+	}).Debug("vsc.VolumeInspect()")
 
 	vol, err := v.VolumeInspect(volumeID)
 	if err != nil {
@@ -240,7 +283,13 @@ func (v *Vsc) VolumeCreate(request *types.VolumeCreateRequest) (*types.Volume, e
 	if err != nil {
 		return nil, err
 	}
-	vol.Schedulers = request.Schedulers
+	vol.Schedulers = []string{request.ServiceName}
+	for _, sched := range request.Schedulers {
+		if sched != "" {
+			vol.Schedulers = append(vol.Schedulers, sched)
+		}
+	}
+
 	vol.Labels = request.Labels
 
 	err = v.p.Store.SaveVolumeMetadata(vol)
@@ -253,21 +302,23 @@ func (v *Vsc) VolumeCreate(request *types.VolumeCreateRequest) (*types.Volume, e
 
 // VolumeRemove removes a volume
 func (v *Vsc) VolumeRemove(volumeID string) error {
-	log.WithFields(log.Fields{
-		"volumeID": volumeID,
-	}).Debug("vsc.VolumeRemove()")
-
-	vs := strings.SplitN(volumeID, "-", 2)
-	if len(vs) != 2 {
-		return goof.New("volume must be service-volumeid")
-	}
-
-	vol, err := v.p.LsClient.VolumeInspect(vs[0], vs[1], false)
+	s, libsvid, err := v.LibsVolumeID(volumeID)
 	if err != nil {
 		return err
 	}
 
-	err = v.p.LsClient.VolumeRemove(vs[0], vs[1])
+	log.WithFields(log.Fields{
+		"pVolumeID":    volumeID,
+		"service":      s,
+		"libsVolumeID": libsvid,
+	}).Debug("vsc.VolumeInspect()")
+
+	vol, err := v.p.LsClient.VolumeInspect(s, libsvid, false)
+	if err != nil {
+		return err
+	}
+
+	err = v.p.LsClient.VolumeRemove(s, libsvid)
 	if err != nil {
 		return err
 	}

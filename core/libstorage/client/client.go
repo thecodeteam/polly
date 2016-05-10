@@ -8,13 +8,17 @@ import (
 	apitypes "github.com/emccode/libstorage/api/types"
 	"github.com/emccode/libstorage/client"
 	"github.com/emccode/polly/api/types"
+	"strings"
 )
 
 // Client is the polly version of libstorage Client
 type Client struct {
 	apitypes.Client
-	ctx    apitypes.Context
-	config gofig.Config
+	ctx            apitypes.Context
+	config         gofig.Config
+	Services       apitypes.ServicesMap
+	ServiceDrivers map[string]string
+	DriverService  map[string]string
 }
 
 // NewWithConfig creates a new client with specified configuration object
@@ -26,26 +30,63 @@ func NewWithConfig(ctx apitypes.Context, config gofig.Config) (*Client, error) {
 			"error dialing libStorage service", err)
 	}
 
-	return &Client{c, ctx, config}, nil
+	services, err := c.API().Services(ctx)
+	if err != nil {
+		return nil, goof.WithError("cannot instantiate client services", err)
+	}
+	for _, service := range services {
+		if strings.Contains(service.Name, "-") {
+			return nil, goof.New("illegal character in serviceName '-'")
+		}
+	}
+
+	serviceDrivers := make(map[string]string)
+	for _, service := range services {
+		serviceDrivers[service.Name] = service.Driver.Name
+	}
+
+	driverService := make(map[string]string)
+	for _, s := range services {
+		driverService[s.Driver.Name] = s.Name
+	}
+
+	return &Client{c, ctx, config, services, serviceDrivers, driverService}, nil
+}
+
+func getDriver(c *Client, s string) (string, error) {
+	if service, ok := c.Services[s]; ok {
+		return service.Driver.Name, nil
+	}
+
+	return "", goof.New("no service found by name")
 }
 
 // NewVolume creates a Polly volume from a libStorage volume
-func NewVolume(vol *apitypes.Volume, service string) *types.Volume {
+func NewVolume(c *Client, vol *apitypes.Volume, service string) (*types.Volume, error) {
+	var d string
+	var err error
+	if c != nil {
+		d, err = getDriver(c, service)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	newVol := &types.Volume{
 		Volume:      vol,
 		ServiceName: service,
-		VolumeID:    fmt.Sprintf("%s-%s", service, vol.ID),
+		VolumeID:    fmt.Sprintf("%s-%s", d, vol.ID),
 		Labels:      make(map[string]string),
 	}
 	log.WithFields(log.Fields{
 		"newVolume":        newVol,
 		"newVolume.Volume": newVol.Volume,
 	}).Debug("converted volume from libstorage to polly")
-	return newVol
+	return newVol, nil
 }
 
 // VolumesByService returns a list of Polly volumes from libstorage
-func (c Client) VolumesByService(serviceName string) ([]*types.Volume, error) {
+func (c *Client) VolumesByService(serviceName string) ([]*types.Volume, error) {
 	c.Client.API().AddHeader("requestPath", c.requestPath())
 	volumeMap, err := c.Client.API().VolumesByService(
 		c.ctx, serviceName, false)
@@ -55,13 +96,17 @@ func (c Client) VolumesByService(serviceName string) ([]*types.Volume, error) {
 
 	var vols []*types.Volume
 	for _, vol := range volumeMap {
-		vols = append(vols, NewVolume(vol, serviceName))
+		nv, err := NewVolume(c, vol, serviceName)
+		if err != nil {
+			return nil, err
+		}
+		vols = append(vols, nv)
 	}
 	return vols, nil
 }
 
 // Volumes returns a list of Polly volumes from libstorage
-func (c Client) Volumes() ([]*types.Volume, error) {
+func (c *Client) Volumes() ([]*types.Volume, error) {
 	c.Client.API().AddHeader("requestPath", c.requestPath())
 	serviceVolumeMap, err := c.Client.API().Volumes(
 		c.ctx, false)
@@ -72,21 +117,30 @@ func (c Client) Volumes() ([]*types.Volume, error) {
 	var vols []*types.Volume
 	for serviceName, volumeMap := range serviceVolumeMap {
 		for _, vol := range volumeMap {
-			vols = append(vols, NewVolume(vol, serviceName))
+			nv, err := NewVolume(c, vol, serviceName)
+			if err != nil {
+				return nil, err
+			}
+			vols = append(vols, nv)
 		}
 	}
 	return vols, nil
 }
 
 // VolumeInspect returns a Polly volume
-func (c Client) VolumeInspect(serviceName, volumeID string, attachments bool) (*types.Volume, error) {
+func (c *Client) VolumeInspect(serviceName, volumeID string, attachments bool) (*types.Volume, error) {
 	c.Client.API().AddHeader("requestPath", c.requestPath())
 	vol, err := c.Client.API().VolumeInspect(c.ctx, serviceName, volumeID, attachments)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewVolume(vol, serviceName), nil
+	nv, err := NewVolume(c, vol, serviceName)
+	if err != nil {
+		return nil, err
+	}
+
+	return nv, nil
 }
 
 // VolumeCreate creates a Polly Volume
@@ -97,7 +151,11 @@ func (c *Client) VolumeCreate(serviceName string, request *apitypes.VolumeCreate
 		return nil, err
 	}
 
-	return NewVolume(vol, serviceName), nil
+	nv, err := NewVolume(c, vol, serviceName)
+	if err != nil {
+		return nil, err
+	}
+	return nv, nil
 }
 
 // VolumeRemove removes a Polly Volume

@@ -78,7 +78,11 @@ func TestNewVolume(t *testing.T) {
 		Name: "mock1",
 		ID:   "vol-001",
 	}
-	vol := lsclient.NewVolume(avol, "mock")
+	vol, err := lsclient.NewVolume(p.LsClient, avol, "mock")
+	assert.NoError(t, err)
+	if err != nil {
+		t.FailNow()
+	}
 
 	assert.Equal(t, "mock1", vol.Name)
 	assert.Equal(t, "mock-vol-001", vol.VolumeID)

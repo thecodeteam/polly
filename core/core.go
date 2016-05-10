@@ -10,6 +10,7 @@ import (
 	apivolroute "github.com/emccode/libstorage/api/server/router/volume"
 	apitypes "github.com/emccode/libstorage/api/types"
 	adminserver "github.com/emccode/polly/api/admin/server"
+	catypes "github.com/emccode/polly/api/types"
 	"github.com/emccode/polly/core/libstorage/client"
 	"github.com/emccode/polly/core/libstorage/server"
 	store "github.com/emccode/polly/core/store"
@@ -122,12 +123,6 @@ func Start(p *ctypes.Polly) error {
 	}
 	p.LsClient = lsc
 
-	services, err := lsc.API().Services(ctx)
-	if err != nil {
-		return goof.WithError("cannot instantiate client services", err)
-	}
-	p.Services = services
-
 	// filterVolume sets a filter in place for requests
 	filterVolume := func(
 		ctx apitypes.Context,
@@ -136,27 +131,35 @@ func Start(p *ctypes.Polly) error {
 		volume *apitypes.Volume) (bool, error) {
 
 		// set the polly volume settings
-		volumeNew := client.NewVolume(volume, ctx.ServiceName())
+		volumeNew, err := client.NewVolume(lsc, volume, ctx.ServiceName())
+		if err != nil {
+			return false, err
+		}
+
 		volume.Fields = make(map[string]string)
 		volume.Fields["polly.id"] = volumeNew.VolumeID
-		for k, v := range volumeNew.Labels {
-			volume.Fields[fmt.Sprintf("polly.labels.%s", k)] = v
-		}
 
 		// apply filtering
 		rp := req.Header.Get("requestpath")
-		ctx.WithField("requestPath", rp).Debug("volume response on request path")
+		ctx.WithField("requestPath", rp).Info("volume response on request path")
+
 		if ctx.Route() == "volumeCreate" {
-			if err := p.Store.SaveVolumeMetadata(volumeNew); err != nil {
-				return false, err
+			// establish new volume metadata for new libstorage inbound requests
+			ctx.WithField("route", ctx.Route()).Debug("volumes create route")
+			volumeNew.Schedulers = []string{ctx.ServiceName()}
+			err = p.Store.SaveVolumeMetadata(volumeNew)
+			if err != nil {
+				return false, goof.WithError("failed to save metadata", err)
 			}
-			return updateVolume(ctx, p, volume, true)
+
+			return updateVolume(ctx, p, volumeNew, volume, true, rp)
 		} else if rp == "admin" {
 			ctx.WithField("requestPath", rp).Debug("volumes from admin request")
-			return updateVolume(ctx, p, volume, false)
+			return updateVolume(ctx, p, volumeNew, volume, false, rp)
 		}
 		ctx.WithField("requestPath", rp).Debug("volumes from non-admin request")
-		return updateVolume(ctx, p, volume, true)
+
+		return updateVolume(ctx, p, volumeNew, volume, true, rp)
 	}
 
 	apivolroute.OnVolume = filterVolume
@@ -166,21 +169,32 @@ func Start(p *ctypes.Polly) error {
 }
 
 func updateVolume(ctx apitypes.Context, p *ctypes.Polly,
-	volume *apitypes.Volume, mustExist bool) (bool, error) {
+	volumeNew *catypes.Volume, volume *apitypes.Volume,
+	mustExist bool, rp string) (bool, error) {
 
-	volumeNew := client.NewVolume(volume, ctx.ServiceName())
 	if exists, err := p.Store.Exists(volumeNew); err != nil {
 		return false, err
 	} else if mustExist && !exists {
 		return false, err
+	} else if exists {
+		if err := p.Store.SetVolumeAdminLabels(volumeNew); err != nil {
+			return false, err
+		}
+
+		if _, err := p.Store.SetVolumeMetadata(volumeNew); err != nil {
+			return false, err
+		}
+
+		for k, v := range volumeNew.Labels {
+			volume.Fields[fmt.Sprintf("polly.labels.%s", k)] = v
+		}
 	}
 
-	if err := p.Store.SetVolumeAdminLabels(volumeNew); err != nil {
-		return false, err
+	if !util.ContainsString(volumeNew.Schedulers, ctx.ServiceName()) &&
+		rp != "admin" {
+		return false, nil
 	}
-	if _, err := p.Store.SetVolumeMetadata(volumeNew); err != nil {
-		return false, err
-	}
+
 	return true, nil
 }
 

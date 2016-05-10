@@ -36,10 +36,7 @@ polly:
         localhost:
           address: tcp://localhost:7979
       services:
-        mock:
-          libstorage:
-            driver: mock
-        mock2:
+        mockService:
           libstorage:
             driver: mock
 `
@@ -95,7 +92,7 @@ func TestVolumesAll(t *testing.T) {
 	if err != nil {
 		t.FailNow()
 	}
-	assert.Len(t, vols, 6)
+	assert.Len(t, vols, 3)
 }
 
 func TestVolumes(t *testing.T) {
@@ -109,14 +106,14 @@ func TestVolumes(t *testing.T) {
 }
 
 func TestVolumeInspect(t *testing.T) {
-	vol, err := tpc.VolumeInspect("mock2-vol-000")
+	vol, err := tpc.VolumeInspect("mock-vol-000")
 
 	assert.NoError(t, err)
 	if err != nil {
 		t.FailNow()
 	}
-	assert.Equal(t, "mock2-vol-000", vol.VolumeID)
-	assert.Equal(t, "mock2", vol.ServiceName)
+	assert.Equal(t, "mock-vol-000", vol.VolumeID)
+	assert.Equal(t, "mockservice", vol.ServiceName)
 }
 
 func TestVolumeOffer(t *testing.T) {
@@ -127,7 +124,7 @@ func TestVolumeOffer(t *testing.T) {
 	}
 
 	assert.Equal(t, "mock-vol-001", vol.VolumeID)
-	assert.Equal(t, "mock", vol.ServiceName)
+	assert.Equal(t, "mockservice", vol.ServiceName)
 	assert.Contains(t, vol.Schedulers, "mesos")
 
 	vol, err = tpc.VolumeInspect("mock-vol-001")
@@ -148,7 +145,7 @@ func TestVolumeOfferMultiple(t *testing.T) {
 	}
 
 	assert.Equal(t, "mock-vol-001", vol.VolumeID)
-	assert.Equal(t, "mock", vol.ServiceName)
+	assert.Equal(t, "mockservice", vol.ServiceName)
 	assert.Contains(t, vol.Schedulers, "mesos")
 	assert.Contains(t, vol.Schedulers, "docker")
 
@@ -170,7 +167,7 @@ func TestVolumeOfferRevoke(t *testing.T) {
 	}
 
 	assert.Equal(t, "mock-vol-001", vol.VolumeID)
-	assert.Equal(t, "mock", vol.ServiceName)
+	assert.Equal(t, "mockservice", vol.ServiceName)
 	assert.Contains(t, vol.Schedulers, "mesos")
 	assert.Contains(t, vol.Schedulers, "docker")
 
@@ -181,7 +178,7 @@ func TestVolumeOfferRevoke(t *testing.T) {
 	}
 
 	assert.Equal(t, "mock-vol-001", vol.VolumeID)
-	assert.Equal(t, "mock", vol.ServiceName)
+	assert.Equal(t, "mockservice", vol.ServiceName)
 	assert.Len(t, vol.Schedulers, 0)
 
 	vol, err = tpc.VolumeInspect("mock-vol-001")
@@ -199,7 +196,7 @@ func TestVolumeLabel(t *testing.T) {
 		t.FailNow()
 	}
 	assert.Equal(t, "mock-vol-000", vol.VolumeID)
-	assert.Equal(t, "mock", vol.ServiceName)
+	assert.Equal(t, "mockservice", vol.ServiceName)
 
 	key1 := "key1"
 	value1 := "value1"
@@ -213,7 +210,7 @@ func TestVolumeLabel(t *testing.T) {
 	}
 
 	assert.Equal(t, "mock-vol-000", vol.VolumeID)
-	assert.Equal(t, "mock", vol.ServiceName)
+	assert.Equal(t, "mockservice", vol.ServiceName)
 	assert.Len(t, vol.Labels, 2)
 
 	vol, err = tpc.VolumeInspect("mock-vol-000")
@@ -284,7 +281,8 @@ func TestVolumeCreate(t *testing.T) {
 	schedulers := []string{"scheduler1", "scheduler2"}
 	labels := []string{fmt.Sprintf("%s=%s", key1, value1), fmt.Sprintf("%s=%s", key2, value2)}
 	fields := []string{fmt.Sprintf("%s=%s", key1, value1), fmt.Sprintf("%s=%s", key2, value2)}
-	service := "mock2"
+	service := "mockservice"
+	driver := "mock"
 	vol, err := tpc.VolumeCreate(service, name, vtype, size, IOPS, availabilityZone, schedulers, labels, fields)
 	assert.NoError(t, err)
 	if err != nil {
@@ -303,9 +301,9 @@ func TestVolumeCreate(t *testing.T) {
 	assert.Equal(t, name, vol.Volume.Name)
 	assert.Equal(t, size, vol.Volume.Size)
 	assert.Equal(t, vtype, vol.Volume.Type)
-	assert.Equal(t, fmt.Sprintf("%s-%s", service, "vol-004"), vol.VolumeID)
+	assert.Equal(t, fmt.Sprintf("%s-%s", driver, "vol-004"), vol.VolumeID)
 
-	vol, err = tpc.VolumeInspect(fmt.Sprintf("%s-%s", service, "vol-004"))
+	vol, err = tpc.VolumeInspect(fmt.Sprintf("%s-%s", driver, "vol-004"))
 	assert.NoError(t, err)
 	if err != nil {
 		t.FailNow()
@@ -323,7 +321,7 @@ func TestVolumeCreate(t *testing.T) {
 	assert.Equal(t, name, vol.Volume.Name)
 	assert.Equal(t, size, vol.Volume.Size)
 	assert.Equal(t, vtype, vol.Volume.Type)
-	assert.Equal(t, fmt.Sprintf("%s-%s", service, "vol-004"), vol.VolumeID)
+	assert.Equal(t, fmt.Sprintf("%s-%s", driver, "vol-004"), vol.VolumeID)
 
 }
 
