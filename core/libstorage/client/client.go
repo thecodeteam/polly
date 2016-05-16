@@ -5,8 +5,9 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/akutz/gofig"
 	"github.com/akutz/goof"
+	"github.com/emccode/libstorage"
 	apitypes "github.com/emccode/libstorage/api/types"
-	"github.com/emccode/libstorage/client"
+	pcontext "github.com/emccode/polly/api/context"
 	"github.com/emccode/polly/api/types"
 	"strings"
 )
@@ -23,7 +24,20 @@ type Client struct {
 
 // NewWithConfig creates a new client with specified configuration object
 func NewWithConfig(ctx apitypes.Context, config gofig.Config) (*Client, error) {
-	c, err := client.New(config)
+	config = config.Scope("polly")
+	_, err, errs := libstorage.Serve(config)
+	if err != nil {
+		return nil, goof.WithError(
+			"error starting libstorage server and client", err)
+	}
+	go func() {
+		err := <-errs
+		if err != nil {
+			log.Error(err)
+		}
+	}()
+
+	c, err := libstorage.Dial(config)
 	if err != nil {
 		return nil, goof.WithFieldE(
 			"host", config.Get("libstorage.host"),
@@ -70,6 +84,8 @@ func NewVolume(c *Client, vol *apitypes.Volume, service string) (*types.Volume, 
 		if err != nil {
 			return nil, err
 		}
+	} else {
+		d = service
 	}
 
 	newVol := &types.Volume{
@@ -87,7 +103,9 @@ func NewVolume(c *Client, vol *apitypes.Volume, service string) (*types.Volume, 
 
 // VolumesByService returns a list of Polly volumes from libstorage
 func (c *Client) VolumesByService(serviceName string) ([]*types.Volume, error) {
-	c.Client.API().AddHeader("requestPath", c.requestPath())
+	if c.ctx.Value(pcontext.RequestPathHeaderKey) == nil {
+		c.ctx = c.ctx.WithValue(pcontext.RequestPathHeaderKey, "admin")
+	}
 	volumeMap, err := c.Client.API().VolumesByService(
 		c.ctx, serviceName, false)
 	if err != nil {
@@ -107,7 +125,9 @@ func (c *Client) VolumesByService(serviceName string) ([]*types.Volume, error) {
 
 // Volumes returns a list of Polly volumes from libstorage
 func (c *Client) Volumes() ([]*types.Volume, error) {
-	c.Client.API().AddHeader("requestPath", c.requestPath())
+	if c.ctx.Value(pcontext.RequestPathHeaderKey) == nil {
+		c.ctx = c.ctx.WithValue(pcontext.RequestPathHeaderKey, "admin")
+	}
 	serviceVolumeMap, err := c.Client.API().Volumes(
 		c.ctx, false)
 	if err != nil {
@@ -129,7 +149,10 @@ func (c *Client) Volumes() ([]*types.Volume, error) {
 
 // VolumeInspect returns a Polly volume
 func (c *Client) VolumeInspect(serviceName, volumeID string, attachments bool) (*types.Volume, error) {
-	c.Client.API().AddHeader("requestPath", c.requestPath())
+	if c.ctx.Value(pcontext.RequestPathHeaderKey) == nil {
+		c.ctx = c.ctx.WithValue(pcontext.RequestPathHeaderKey, "admin")
+	}
+
 	vol, err := c.Client.API().VolumeInspect(c.ctx, serviceName, volumeID, attachments)
 	if err != nil {
 		return nil, err
@@ -145,7 +168,9 @@ func (c *Client) VolumeInspect(serviceName, volumeID string, attachments bool) (
 
 // VolumeCreate creates a Polly Volume
 func (c *Client) VolumeCreate(serviceName string, request *apitypes.VolumeCreateRequest) (*types.Volume, error) {
-	c.Client.API().AddHeader("requestPath", "admin")
+	if c.ctx.Value(pcontext.RequestPathHeaderKey) == nil {
+		c.ctx = c.ctx.WithValue(pcontext.RequestPathHeaderKey, "admin")
+	}
 	vol, err := c.Client.API().VolumeCreate(c.ctx, serviceName, request)
 	if err != nil {
 		return nil, err
@@ -160,7 +185,9 @@ func (c *Client) VolumeCreate(serviceName string, request *apitypes.VolumeCreate
 
 // VolumeRemove removes a Polly Volume
 func (c *Client) VolumeRemove(serviceName string, volumeID string) error {
-	c.Client.API().AddHeader("requestPath", c.requestPath())
+	if c.ctx.Value(pcontext.RequestPathHeaderKey) == nil {
+		c.ctx = c.ctx.WithValue(pcontext.RequestPathHeaderKey, "admin")
+	}
 	err := c.Client.API().VolumeRemove(c.ctx, serviceName, volumeID)
 	if err != nil {
 		return err

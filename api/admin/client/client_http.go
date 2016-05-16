@@ -21,6 +21,7 @@ func (c *Client) httpDo(
 	}
 
 	url := fmt.Sprintf("http://%s%s", c.Host, path)
+
 	req, err := http.NewRequest(method, url, reqBody)
 	if err != nil {
 		return nil, err

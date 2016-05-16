@@ -13,7 +13,7 @@ import (
 	"github.com/docker/libkv/store/etcd"
 	"github.com/docker/libkv/store/zookeeper"
 
-	gofig "github.com/akutz/gofig"
+	"github.com/akutz/gofig"
 	"github.com/akutz/goof"
 	"github.com/docker/libkv"
 	version "github.com/emccode/polly/core/version"
@@ -53,12 +53,6 @@ type PollyStore struct {
 
 func init() {
 	gofig.Register(configRegistration())
-}
-
-func configRegistration() *gofig.Registration {
-	r := gofig.NewRegistration("Store")
-	r.Key(gofig.String, "", "polly", "", "root", "root")
-	return r
 }
 
 //NewWithConfig This initializes new instance of this library
@@ -264,22 +258,22 @@ func (ps *PollyStore) EraseType(mytype int) error {
 
 //StoreType this generates the type of backing store to use
 func (ps *PollyStore) StoreType() string {
-	return ps.config.GetString("type")
+	return ps.config.GetString("polly.store.type")
 }
 
 //Root this get the type of backing store to use
 func (ps *PollyStore) Root() string {
-	return ps.config.GetString("root")
+	return ps.config.GetString("polly.store.root")
 }
 
 //EndPoints this gets the endpoints of the store
 func (ps *PollyStore) EndPoints() string {
-	return ps.config.GetString("endpoints")
+	return ps.config.GetString("polly.store.endpoints")
 }
 
 //Bucket this get the type of backing store to use
 func (ps *PollyStore) Bucket() string {
-	return ps.config.GetString("bucket")
+	return ps.config.GetString("polly.store.bucket")
 }
 
 // Version of the metadata in the store
@@ -290,4 +284,13 @@ func (ps *PollyStore) Version() (string, error) {
 		return "", err
 	}
 	return string(pair.Value), nil
+}
+
+func configRegistration() *gofig.Registration {
+	r := gofig.NewRegistration("Store")
+	r.Key(gofig.String, "", "polly", "", "polly.store.root")
+	r.Key(gofig.String, "", "", "", "polly.store.endpoints")
+	r.Key(gofig.String, "", "", "", "polly.store.bucket")
+	r.Key(gofig.String, "", "", "", "polly.store.type")
+	return r
 }

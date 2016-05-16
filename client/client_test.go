@@ -21,20 +21,17 @@ var tpc Client
 
 var defaultConfig = `
 polly:
+  host: tcp://127.0.0.1:7978
   store:
     type: boltdb
     endpoints: /tmp/boltdb
     bucket: MyBoltDb_test
   libstorage:
-    host: tcp://localhost:7979
-    profiles:
-      enabled: true
-      groups:
-      - local=127.0.0.1
+    host: tcp://localhost:7981
     server:
       endpoints:
         localhost:
-          address: tcp://localhost:7979
+          address: tcp://localhost:7981
       services:
         mockService:
           libstorage:
@@ -97,7 +94,6 @@ func TestVolumesAll(t *testing.T) {
 
 func TestVolumes(t *testing.T) {
 	vols, err := tpc.Volumes()
-
 	assert.NoError(t, err)
 	if err != nil {
 		t.FailNow()
@@ -107,7 +103,6 @@ func TestVolumes(t *testing.T) {
 
 func TestVolumeInspect(t *testing.T) {
 	vol, err := tpc.VolumeInspect("mock-vol-000")
-
 	assert.NoError(t, err)
 	if err != nil {
 		t.FailNow()

@@ -21,14 +21,14 @@ import:
     vcs:     git
   - package: github.com/stretchr/testify
   - package: github.com/emccode/libstorage
-    ref:     v0.1.0-rc2 
+    ref:     d983d635da99a664f406df5be572ac0c2fdea367
     vcs:     git
-    repo:    https://github.com/emccode/libstorage
+    repo:    https://github.com/clintonskitson/libstorage
   - package: github.com/docker/libkv
     vcs:     git
   - package: github.com/boltdb/bolt
     vcs:     git
-    ref:     d97499360d1ecebc492ea66c7447ea948f417620
+    ref:     dfb21201d9270c1082d5fb0f07f500311ff72f18
   - package: github.com/coreos/etcd/client
     vcs:     git
     ref:     v2.3.3
