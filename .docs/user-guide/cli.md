@@ -23,7 +23,7 @@ polly start -f
 Restart the server in the foreground with the following command.
 
 ```shell
-polly start -f
+polly restart
 ```
 
 ### Stop
@@ -31,7 +31,7 @@ polly start -f
 Stop the server with the following command.
 
 ```shell
-polly stop -f
+polly stop
 ```
 
 
