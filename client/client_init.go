@@ -44,7 +44,7 @@ func New(config gofig.Config) (Client, error) {
 
 	addr := config.GetString(hostKey)
 
-	proto, lAddr, err := gotil.ParseAddress("tcp://127.0.0.1" + addr)
+	proto, lAddr, err := gotil.ParseAddress(addr)
 	if err != nil {
 		return nil, err
 	}

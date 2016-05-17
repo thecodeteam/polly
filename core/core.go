@@ -2,64 +2,22 @@ package core
 
 import (
 	"fmt"
-	log "github.com/Sirupsen/logrus"
+
 	"github.com/akutz/gofig"
 	"github.com/akutz/goof"
-	"github.com/akutz/gotil"
 	"github.com/emccode/libstorage/api/context"
 	apivolroute "github.com/emccode/libstorage/api/server/router/volume"
 	apitypes "github.com/emccode/libstorage/api/types"
 	adminserver "github.com/emccode/polly/api/admin/server"
 	catypes "github.com/emccode/polly/api/types"
 	"github.com/emccode/polly/core/libstorage/client"
-	"github.com/emccode/polly/core/libstorage/server"
+	// "github.com/emccode/polly/core/libstorage/server"
+	pcontext "github.com/emccode/polly/api/context"
 	store "github.com/emccode/polly/core/store"
 	ctypes "github.com/emccode/polly/core/types"
 	util "github.com/emccode/polly/util"
 	"net/http"
-	"os"
-	"strconv"
 )
-
-func init() {
-	gofig.SetGlobalConfigPath(util.EtcDirPath())
-	gofig.SetUserConfigPath(fmt.Sprintf("%s/.polly", gotil.HomeDir()))
-	gofig.Register(globalRegistration())
-
-	if debug, _ := strconv.ParseBool(os.Getenv("POLLY_DEBUG")); debug {
-		log.SetLevel(log.DebugLevel)
-		os.Setenv("POLLY_SERVER_HTTP_LOGGING_ENABLED", "true")
-		os.Setenv("POLLY_SERVER_HTTP_LOGGING_LOGREQUEST", "true")
-		os.Setenv("POLLY_SERVER_HTTP_LOGGING_LOGRESPONSE", "true")
-		os.Setenv("POLLY_CLIENT_HTTP_LOGGING_ENABLED", "true")
-		os.Setenv("POLLY_CLIENT_HTTP_LOGGING_LOGREQUEST", "true")
-		os.Setenv("POLLY_CLIENT_HTTP_LOGGING_LOGRESPONSE", "true")
-	}
-
-	if debug, _ := strconv.ParseBool(os.Getenv("LIBSTORAGE_DEBUG")); debug {
-		log.SetLevel(log.DebugLevel)
-		os.Setenv("LIBSTORAGE_SERVER_HTTP_LOGGING_ENABLED", "true")
-		os.Setenv("LIBSTORAGE_SERVER_HTTP_LOGGING_LOGREQUEST", "true")
-		os.Setenv("LIBSTORAGE_SERVER_HTTP_LOGGING_LOGRESPONSE", "true")
-		os.Setenv("LIBSTORAGE_CLIENT_HTTP_LOGGING_ENABLED", "true")
-		os.Setenv("LIBSTORAGE_CLIENT_HTTP_LOGGING_LOGREQUEST", "true")
-		os.Setenv("LIBSTORAGE_CLIENT_HTTP_LOGGING_LOGRESPONSE", "true")
-	}
-
-}
-
-func globalRegistration() *gofig.Registration {
-	r := gofig.NewRegistration("Global")
-	r.Yaml(`
-polly:
-  host: :7978
-  logLevel: warn
-`)
-	r.Key(gofig.String, "l", "warn",
-		"The log level (error, warn, info, debug)", "polly.logLevel",
-		"logLevel")
-	return r
-}
 
 //NewWithConfigFile init the lib
 func NewWithConfigFile(path string) (*ctypes.Polly, error) {
@@ -106,19 +64,17 @@ func Start(p *ctypes.Polly) error {
 	p.Store = ps
 
 	lcfg, _ := p.Config.Copy()
-	lscfg, err := server.New(lcfg.Scope("polly"))
-	if err != nil {
-		return err
-	}
-	p.LsConfig = lscfg
 
 	ctx := context.Background()
-	if lscfg.GetString("libstorage.client.requestPath") == "" {
-		lscfg.Set("libstorage.client.requestPath", "admin")
+	if lcfg.GetString("polly.libstorage.client.requestPath") == "" {
+		lcfg.Set("polly.libstorage.client.requestPath", "admin")
 	}
 
-	lsc, err := client.NewWithConfig(ctx, lscfg)
+	lsc, err := client.NewWithConfig(ctx, lcfg)
 	if err != nil {
+		for k, v := range lcfg.AllSettings() {
+			ctx.Errorf("%s=%v", k, v)
+		}
 		return err
 	}
 	p.LsClient = lsc
@@ -131,7 +87,7 @@ func Start(p *ctypes.Polly) error {
 		volume *apitypes.Volume) (bool, error) {
 
 		// set the polly volume settings
-		volumeNew, err := client.NewVolume(lsc, volume, ctx.ServiceName())
+		volumeNew, err := client.NewVolume(lsc, volume, context.MustService(ctx).Name())
 		if err != nil {
 			return false, err
 		}
@@ -140,13 +96,14 @@ func Start(p *ctypes.Polly) error {
 		volume.Fields["polly.id"] = volumeNew.VolumeID
 
 		// apply filtering
-		rp := req.Header.Get("requestpath")
+		rp := req.Header.Get(pcontext.RequestPathHeaderKey.String())
 		ctx.WithField("requestPath", rp).Info("volume response on request path")
 
-		if ctx.Route() == "volumeCreate" {
+		rt, _ := context.Route(ctx)
+		if rt.GetName() == "volumeCreate" {
 			// establish new volume metadata for new libstorage inbound requests
-			ctx.WithField("route", ctx.Route()).Debug("volumes create route")
-			volumeNew.Schedulers = []string{ctx.ServiceName()}
+			ctx.WithField("route", rt).Debug("volumes create route")
+			volumeNew.Schedulers = []string{context.MustService(ctx).Name()}
 			err = p.Store.SaveVolumeMetadata(volumeNew)
 			if err != nil {
 				return false, goof.WithError("failed to save metadata", err)
@@ -171,7 +128,6 @@ func Start(p *ctypes.Polly) error {
 func updateVolume(ctx apitypes.Context, p *ctypes.Polly,
 	volumeNew *catypes.Volume, volume *apitypes.Volume,
 	mustExist bool, rp string) (bool, error) {
-
 	if exists, err := p.Store.Exists(volumeNew); err != nil {
 		return false, err
 	} else if mustExist && !exists {
@@ -190,7 +146,7 @@ func updateVolume(ctx apitypes.Context, p *ctypes.Polly,
 		}
 	}
 
-	if !util.ContainsString(volumeNew.Schedulers, ctx.ServiceName()) &&
+	if !util.ContainsString(volumeNew.Schedulers, context.MustService(ctx).Name()) &&
 		rp != "admin" {
 		return false, nil
 	}

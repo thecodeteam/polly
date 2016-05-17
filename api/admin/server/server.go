@@ -3,6 +3,7 @@ package server
 import (
 	"net/http"
 
+	"github.com/akutz/gotil"
 	ctypes "github.com/emccode/polly/core/types"
 	"github.com/emccode/polly/core/volumes"
 	"github.com/gorilla/mux"
@@ -54,8 +55,13 @@ func Start(p *ctypes.Polly) *Router {
 
 	http.Handle("/", r.r)
 
+	_, lAddr, err := gotil.ParseAddress(p.Config.GetString("polly.host"))
+	if err != nil {
+		panic(err)
+	}
+
 	go func() {
-		err := http.ListenAndServe(p.Config.GetString("polly.host"), nil)
+		err := http.ListenAndServe(lAddr, nil)
 		panic(err)
 	}()
 

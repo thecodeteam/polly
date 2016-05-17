@@ -12,7 +12,7 @@ import (
 	"bytes"
 	"github.com/akutz/goof"
 	apitypes "github.com/emccode/libstorage/api/types"
-	apiutils "github.com/emccode/libstorage/api/utils"
+
 	"github.com/emccode/polly/core"
 	lsclient "github.com/emccode/polly/core/libstorage/client"
 	"github.com/emccode/polly/core/types"
@@ -26,29 +26,26 @@ var p *types.Polly
 
 var defaultConfig = `
 polly:
+  host: tcp://localhost:7978
   store:
     type: boltdb
     endpoints: /tmp/boltdb
     bucket: MyBoltDb_test
   libstorage:
-    host: tcp://localhost:7979
+    host: tcp://localhost:7981
     client:
       requestPath: client
-    profiles:
-      enabled: true
-      groups:
-      - local=127.0.0.1
     server:
       endpoints:
         localhost:
-          address: tcp://localhost:7979
+          address: tcp://localhost:7981
       services:
-        mock:
+        vfs:
           libstorage:
-            driver: mock
-        mock2:
+            driver: vfs
+        vfs2:
           libstorage:
-            driver: mock
+            driver: vfs
 `
 
 func TestMain(m *testing.M) {
@@ -75,31 +72,17 @@ func TestMain(m *testing.M) {
 
 func TestNewVolume(t *testing.T) {
 	avol := &apitypes.Volume{
-		Name: "mock1",
+		Name: "vfs1",
 		ID:   "vol-001",
 	}
-	vol, err := lsclient.NewVolume(p.LsClient, avol, "mock")
+	vol, err := lsclient.NewVolume(p.LsClient, avol, "vfs")
 	assert.NoError(t, err)
 	if err != nil {
 		t.FailNow()
 	}
 
-	assert.Equal(t, "mock1", vol.Name)
-	assert.Equal(t, "mock-vol-001", vol.VolumeID)
-}
-
-func TestVolumesNone(t *testing.T) {
-	if err := p.Store.EraseStore(); err != nil {
-		log.Error(goof.WithError("problem erasing store", err))
-	}
-
-	vols, err := p.LsClient.Volumes()
-	assert.NoError(t, err)
-	if err != nil {
-		t.FailNow()
-	}
-
-	assert.Len(t, vols, 0)
+	assert.Equal(t, "vfs1", vol.Name)
+	assert.Equal(t, "vfs-vol-001", vol.VolumeID)
 }
 
 func TestVolumeCreate(t *testing.T) {
@@ -108,7 +91,7 @@ func TestVolumeCreate(t *testing.T) {
 	size := int64(1)
 	IOPS := int64(1)
 
-	uuid, _ := apiutils.NewUUID()
+	uuid := apitypes.MustNewUUID()
 	vn := strings.Split(uuid.String(), "-")
 
 	request := &apitypes.VolumeCreateRequest{
@@ -118,7 +101,7 @@ func TestVolumeCreate(t *testing.T) {
 		Size:             &size,
 		IOPS:             &IOPS,
 	}
-	vol, err := p.LsClient.VolumeCreate("mock", request)
+	vol, err := p.LsClient.VolumeCreate("vfs", request)
 	assert.NoError(t, err)
 	if err != nil {
 		t.FailNow()
@@ -134,7 +117,7 @@ func TestVolumeCreateRemove(t *testing.T) {
 	size := int64(1)
 	IOPS := int64(1)
 
-	uuid, _ := apiutils.NewUUID()
+	uuid := apitypes.MustNewUUID()
 	vn := strings.Split(uuid.String(), "-")
 
 	request := &apitypes.VolumeCreateRequest{
@@ -144,19 +127,19 @@ func TestVolumeCreateRemove(t *testing.T) {
 		Size:             &size,
 		IOPS:             &IOPS,
 	}
-	vol, err := p.LsClient.VolumeCreate("mock", request)
+	vol, err := p.LsClient.VolumeCreate("vfs", request)
 	assert.NoError(t, err)
 	if err != nil {
 		t.FailNow()
 	}
 
-	err = p.LsClient.VolumeRemove("mock", vol.ID)
+	err = p.LsClient.VolumeRemove("vfs", vol.ID)
 	assert.NoError(t, err)
 	if err != nil {
 		t.FailNow()
 	}
 
-	vol, err = p.LsClient.VolumeInspect("mock", vol.ID, false)
+	vol, err = p.LsClient.VolumeInspect("vfs", vol.ID, false)
 	assert.Error(t, err)
 	if err == nil {
 		t.FailNow()
@@ -169,7 +152,7 @@ func TestVolumeInspect(t *testing.T) {
 	size := int64(1)
 	IOPS := int64(1)
 
-	uuid, _ := apiutils.NewUUID()
+	uuid := apitypes.MustNewUUID()
 	vn := strings.Split(uuid.String(), "-")
 
 	request := &apitypes.VolumeCreateRequest{
@@ -179,7 +162,7 @@ func TestVolumeInspect(t *testing.T) {
 		Size:             &size,
 		IOPS:             &IOPS,
 	}
-	vol, err := p.LsClient.VolumeCreate("mock", request)
+	vol, err := p.LsClient.VolumeCreate("vfs", request)
 	assert.NoError(t, err)
 	if err != nil {
 		t.FailNow()
@@ -188,7 +171,7 @@ func TestVolumeInspect(t *testing.T) {
 	assert.NotEqual(t, vol, nil)
 	assert.Equal(t, vn[0], vol.Name)
 
-	vol, err = p.LsClient.VolumeInspect("mock", vol.ID, false)
+	vol, err = p.LsClient.VolumeInspect("vfs", vol.ID, false)
 	assert.NoError(t, err)
 	if err != nil {
 		t.FailNow()
@@ -206,7 +189,7 @@ func TestVolumes(t *testing.T) {
 	size := int64(1)
 	IOPS := int64(1)
 
-	uuid, _ := apiutils.NewUUID()
+	uuid := apitypes.MustNewUUID()
 	vn1 := strings.Split(uuid.String(), "-")
 
 	request := &apitypes.VolumeCreateRequest{
@@ -216,13 +199,13 @@ func TestVolumes(t *testing.T) {
 		Size:             &size,
 		IOPS:             &IOPS,
 	}
-	_, err := p.LsClient.VolumeCreate("mock", request)
+	_, err := p.LsClient.VolumeCreate("vfs", request)
 	assert.NoError(t, err)
 	if err != nil {
 		t.FailNow()
 	}
 
-	uuid, _ = apiutils.NewUUID()
+	uuid = apitypes.MustNewUUID()
 	vn2 := strings.Split(uuid.String(), "-")
 
 	request = &apitypes.VolumeCreateRequest{
@@ -232,7 +215,7 @@ func TestVolumes(t *testing.T) {
 		Size:             &size,
 		IOPS:             &IOPS,
 	}
-	_, err = p.LsClient.VolumeCreate("mock", request)
+	_, err = p.LsClient.VolumeCreate("vfs", request)
 	assert.NoError(t, err)
 	if err != nil {
 		t.FailNow()

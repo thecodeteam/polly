@@ -4,10 +4,8 @@ import (
 	"bytes"
 
 	log "github.com/Sirupsen/logrus"
-
-	"testing"
-
 	"os"
+	"testing"
 
 	gofig "github.com/akutz/gofig"
 	lstypes "github.com/emccode/libstorage/api/types"
@@ -22,7 +20,13 @@ polly:
   store:
     type: boltdb
     endpoints: /tmp/boltdb
-    bucket: MyBoltDb
+    bucket: MyBoltDb_test
+  server:
+    services:
+      vfs:
+        libstorage:
+          storage:
+            driver: vfs
 `
 	libStorageConfigBaseConsul = `
 polly:
@@ -53,9 +57,9 @@ func TestMain(m *testing.M) {
 	}
 
 	var err error
-	ps, err = NewWithConfig(config.Scope("polly.store"))
+	ps, err = NewWithConfig(config)
 	if err != nil {
-		log.Fatal("Failed to create PollyStore")
+		log.WithError(err).Fatal("Failed to create PollyStore")
 	}
 
 	vol := newVolume("pollytestpkg1", "testid1")
