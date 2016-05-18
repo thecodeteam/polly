@@ -72,4 +72,26 @@ certificates are in order. The Polly REST API should not be exposed today.
 
 ## Alternate key/value store option
 
-Polly uses [libkv](https://github.com/docker/libkv) as an abstraction layer to a key value store. libkv also allows use of [Consul](https://www.consul.io/intro/getting-started/kv.html) or [Zookeeper](https://zookeeper.apache.org/doc/r3.3.3/zookeeperStarted.html) as alternatives to Bolt.
+Polly uses [libkv](https://github.com/docker/libkv) as an abstraction layer to a key value store. libkv also allows use of [Consul](https://www.consul.io/intro/getting-started/kv.html) or [Zookeeper](https://zookeeper.apache.org/doc/r3.3.3/zookeeperStarted.html) as alternatives to Bolt. Currently only Bolt, Consul, and Zookeeper are supported for back-end stores.
+
+By default Bolt is the default backing store; however, example configurations for Consul and Zookeeper can be found below. Consul and Zookeeper instances can either be local or remote keeping in mind a network path to those services exist from Polly (i.e. firewalls, and etc). This will allow your configuration to leverage preexisting service that might exist in your application. For example, Zookeeper instances in Apache Mesos clusters.
+
+Consul:
+```
+polly:
+  ...
+  store:
+    type: consul
+    endpoints: 10.50.0.1:8500
+  ...
+```
+
+Zookeeper:
+```
+polly:
+  ...
+  store:
+    type: zk
+    endpoints: 10.50.0.1:2181
+  ...
+```
