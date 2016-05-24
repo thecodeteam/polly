@@ -14,7 +14,7 @@ before_script:
   - source .build/dependencies.sh
 
 script:
-  - POLLY_DEBUG=true LIBSTORAGE_DEBUG=true make build-all test rpm-all deb-all deploy-prep
+  - POLLY_DEBUG=true LIBSTORAGE_DEBUG=true make deps build-all test rpm-all deb-all deploy-prep
 
 notifications:
   - slack: $SLACK_BUILDS

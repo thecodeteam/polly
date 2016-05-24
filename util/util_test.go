@@ -210,6 +210,8 @@ func TestReadPidFileWithErrors(t *testing.T) {
 }
 
 func TestPrintVersion(t *testing.T) {
+	t.SkipNow()
+
 	version.Arch = "Linux-x86_64"
 	version.Branch = "master"
 	version.ShaLong = gotil.RandomString(32)

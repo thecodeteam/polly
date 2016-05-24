@@ -21,7 +21,7 @@ import:
     vcs:     git
   - package: github.com/stretchr/testify
   - package: github.com/emccode/libstorage
-    ref:     d983d635da99a664f406df5be572ac0c2fdea367
+    ref:     bb9b9477e65ae23c035dc78096e8870c306b7112
     vcs:     git
     repo:    https://github.com/clintonskitson/libstorage
   - package: github.com/docker/libkv
