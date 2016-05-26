@@ -39,7 +39,7 @@ else
 		export GOARCH ?= amd64
 	endif
 	ifeq ($(origin GOARCH), undefined)
-		UNAME_P := $(shell uname -p)
+		UNAME_P := $(shell uname -m)
 		ifeq ($(UNAME_P),x86_64)
 			export GOARCH = amd64
 		endif
