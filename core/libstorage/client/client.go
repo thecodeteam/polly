@@ -25,11 +25,19 @@ type Client struct {
 // NewWithConfig creates a new client with specified configuration object
 func NewWithConfig(ctx apitypes.Context, config gofig.Config) (*Client, error) {
 	config = config.Scope("polly")
-	_, err, errs := libstorage.Serve(config)
+	lsc, _, errs, err := libstorage.New(nil, config)
 	if err != nil {
-		return nil, goof.WithError(
-			"error starting libstorage server and client", err)
+		for k, v := range config.AllSettings() {
+			ctx.Errorf("%s=%v", k, v)
+		}
+		ctx.Fatal(err)
 	}
+
+	// _, err, errs := libstorage.Serve(config)
+	// if err != nil {
+	// 	return nil, goof.WithError(
+	// 		"error starting libstorage server and client", err)
+	// }
 	go func() {
 		err := <-errs
 		if err != nil {
@@ -37,14 +45,14 @@ func NewWithConfig(ctx apitypes.Context, config gofig.Config) (*Client, error) {
 		}
 	}()
 
-	c, err := libstorage.Dial(config)
-	if err != nil {
-		return nil, goof.WithFieldE(
-			"host", config.Get("libstorage.host"),
-			"error dialing libStorage service", err)
-	}
+	// c, err := libstorage.Dial(config)
+	// if err != nil {
+	// 	return nil, goof.WithFieldE(
+	// 		"host", config.Get("libstorage.host"),
+	// 		"error dialing libStorage service", err)
+	// }
 
-	services, err := c.API().Services(ctx)
+	services, err := lsc.API().Services(ctx)
 	if err != nil {
 		return nil, goof.WithError("cannot instantiate client services", err)
 	}
@@ -64,7 +72,7 @@ func NewWithConfig(ctx apitypes.Context, config gofig.Config) (*Client, error) {
 		driverService[s.Driver.Name] = s.Name
 	}
 
-	return &Client{c, ctx, config, services, serviceDrivers, driverService}, nil
+	return &Client{lsc, ctx, config, services, serviceDrivers, driverService}, nil
 }
 
 func getDriver(c *Client, s string) (string, error) {

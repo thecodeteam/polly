@@ -10,8 +10,9 @@ import (
 	"strconv"
 
 	"github.com/akutz/gotil"
-
+	apiversion "github.com/emccode/libstorage/api"
 	"github.com/emccode/polly/core/version"
+	"time"
 )
 
 const (
@@ -245,12 +246,23 @@ func ReadPidFile() (int, error) {
 
 // PrintVersion prints the current version information to the provided writer.
 func PrintVersion(out io.Writer) {
+	fmt.Fprintln(out, "Polly")
+	fmt.Fprintln(out, "----------")
 	fmt.Fprintf(out, "Binary: %s\n", thisExeAbsPath)
 	fmt.Fprintf(out, "SemVer: %s\n", version.SemVer)
 	fmt.Fprintf(out, "OsArch: %s\n", version.Arch)
 	fmt.Fprintf(out, "Branch: %s\n", version.Branch)
 	fmt.Fprintf(out, "Commit: %s\n", version.ShaLong)
-	fmt.Fprintf(out, "Formed: %s\n", version.EpochToRfc1123())
+	fmt.Fprintf(out, "Formed: %s\n\n", version.EpochToRfc1123())
+	fmt.Fprintln(out, "libStorage")
+	fmt.Fprintln(out, "----------")
+	fmt.Fprintf(out, "SemVer: %s\n", apiversion.Version.SemVer)
+	fmt.Fprintf(out, "OsArch: %s\n", apiversion.Version.Arch)
+	fmt.Fprintf(out, "Branch: %s\n", apiversion.Version.Branch)
+	fmt.Fprintf(out, "Commit: %s\n", apiversion.Version.ShaLong)
+
+	timestamp := apiversion.Version.BuildTimestamp.Format(time.RFC1123)
+	fmt.Fprintf(out, "Formed: %s\n", timestamp)
 }
 
 //ContainsString searches an array for a matching string

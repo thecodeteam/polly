@@ -192,6 +192,13 @@ RPMDIR := $(BUILDS)/rpm
 
 all: install
 
+VEND_LIBSTR := vendor/github.com/emccode/libstorage
+API_GEN_GO := $(VEND_LIBSTR)/api/api_generated.go
+EXEC_GEN_GO := $(VEND_LIBSTR)/api/server/executors/executors_generated.go
+$(API_GEN_GO) $(EXEC_GEN_GO):
+	cd $(VEND_LIBSTR) && $(MAKE) $(subst $(VEND_LIBSTR)/,,$@) && cd -
+build-libstorage-generated: $(API_GEN_GO) $(EXEC_GEN_GO)
+
 _pre-make:
 	@if [ "$(CWD)" != "$(BASEDIR)" ]; then \
 		if [ -e "$(BASEDIR)" ]; then \
@@ -221,18 +228,13 @@ _deps:
 		printf "  ...go get..."; \
 			go get -d $(GOFLAGS) $(NV); \
 			$(PRINT_STATUS); \
+		$(MAKE) build-libstorage-generated; \
 	fi
 
 build: _pre-make _build _post-make
-_build: _deps _fmt build_
+_build: _fmt build_
 build_:
 	@echo "target: build"
-	@printf "  ...building libstorage executor $(V_OS_ARCH)..."; \
-	  cd $(BASEDIR)/vendor/github.com/emccode/libstorage; \
-		mkdir -p api/server/executors/bin; \
-		make ./api/server/executors/executors_generated.go; \
-		cd $(BASEDIR)/vendor/github.com/emccode/libstorage; \
-		ls api/server/executors/bin;
 	@printf "  ...building polly $(V_OS_ARCH)..."; \
 		cd $(BASEDIR); \
 		FILE=$(BINDIR)/$(V_OS_ARCH)/polly; \
@@ -255,7 +257,7 @@ build_:
 			printf "  $$FILE\n\n"; \
 		fi
 
-build-all: _pre-make version-noarch _deps _fmt build-all_ _post-make
+build-all: _pre-make version-noarch _fmt build-all_ _post-make
 build-all_: build-linux-386_ build-linux-amd64_ build-darwin-amd64_
 
 deploy-prep:
@@ -276,7 +278,7 @@ deploy-prep:
 		printf "SUCCESS!\n"
 
 build-linux-386: _pre-make _build-linux-386 _post-make
-_build-linux-386: _deps _fmt build-linux-386_
+_build-linux-386: _fmt build-linux-386_
 build-linux-386_:
 	@if [ "" != "$(findstring Linux-i386,$(BUILD_PLATFORMS))" ]; then \
 		env _GOOS=linux _GOARCH=386 make build_; \
@@ -285,7 +287,7 @@ rebuild-linux-386: _pre-make _clean _build-linux-386 _post-make
 rebuild-all-linux-386: _pre-make _clean-all _build-linux-386 _post-make
 
 build-linux-amd64: _pre-make _build-linux-amd64 _post-make
-_build-linux-amd64: _deps _fmt build-linux-amd64_
+_build-linux-amd64: _fmt build-linux-amd64_
 build-linux-amd64_:
 	@if [ "" != "$(findstring Linux-x86_64,$(BUILD_PLATFORMS))" ]; then \
 		env _GOOS=linux _GOARCH=amd64 make build_; \
@@ -295,7 +297,7 @@ rebuild-all-linux-amd64: _pre-make _clean-all _build-linux-amd64 _post-make
 
 
 build-darwin-amd64: _pre-make _build-darwin-amd64 _post-make
-_build-darwin-amd64: _deps _fmt build-darwin-amd64_
+_build-darwin-amd64: _fmt build-darwin-amd64_
 build-darwin-amd64_:
 	@if [ "" != "$(findstring Darwin-x86_64,$(BUILD_PLATFORMS))" ]; then \
 		env _GOOS=darwin _GOARCH=amd64 make build_; \
@@ -305,7 +307,7 @@ rebuild-all-darwin-amd64: _pre-make _clean-all _build-darwin-amd64 _post-make
 
 
 install: _pre-make version-noarch _install _post-make
-_install: _deps _fmt
+_install: _fmt
 	@echo "target: install"
 	@printf "  ...installing polly $(V_OS_ARCH)..."; \
 		cd $(BASEDIR); \
