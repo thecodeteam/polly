@@ -45,7 +45,7 @@ better understanding of how to configure the services.
 `REX-Ray` is a `libStorage` compliant storage orchestrator. It can live
 on the distributed hosts where the volumes must be advertised and consumed.
 You can find documentation about `REX-Ray`
-[here]([REX-Ray configuration](http://rexray.readthedocs.io/en/stable/user-guide/config/))
+[here](http://rexray.readthedocs.io/en/stable/user-guide/config/)
 
 The following is an example configuration for REX-Ray talking to the Polly and
 making requests for voumes on behalf of Docker. Notice how the `service`
