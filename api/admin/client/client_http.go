@@ -41,7 +41,7 @@ func (c *Client) httpDo(
 	if res.StatusCode > 299 {
 		httpErr, err := goof.DecodeHTTPError(res.Body)
 		if err != nil {
-			return res, goof.WithField("status", res.StatusCode, "http error")
+			return res, goof.WithField("status", res.StatusCode, httpErr.Error())
 		}
 		return res, httpErr
 	}
