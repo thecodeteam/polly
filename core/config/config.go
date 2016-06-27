@@ -15,17 +15,17 @@ polly:
     type: boltdb
     endpoints: /tmp/boltdb
     bucket: MyBoltDb_test
-  libstorage:
-    host: tcp://127.0.0.1:7981
-    embedded: false
-    server:
-      endpoints:
-        localhost:
-          address: tcp://:7981
-      services:
-        mock:
-          libstorage:
-            driver: mock
+libstorage:
+  host: tcp://127.0.0.1:7981
+  embedded: false
+  server:
+    endpoints:
+      localhost:
+        address: tcp://:7981
+    services:
+      mock:
+        libstorage:
+          driver: mock
 `
 
 // New returns a new configuration object

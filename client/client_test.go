@@ -26,16 +26,16 @@ polly:
     type: boltdb
     endpoints: /tmp/boltdb
     bucket: MyBoltDb_test
-  libstorage:
-    host: tcp://localhost:7981
-    server:
-      endpoints:
-        localhost:
-          address: tcp://localhost:7981
-      services:
-        mockService:
-          libstorage:
-            driver: mock
+libstorage:
+  host: tcp://localhost:7981
+  server:
+    endpoints:
+      localhost:
+        address: tcp://localhost:7981
+    services:
+      mockService:
+        libstorage:
+          driver: mock
 `
 
 func TestMain(m *testing.M) {

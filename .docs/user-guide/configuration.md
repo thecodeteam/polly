@@ -16,18 +16,18 @@ polly:
     type: boltdb
     endpoints: /tmp/boltdb
     bucket: MyBoltDb_test
-  libstorage:
-    host: tcp://127.0.0.1:7981
-    embedded: false
-    server:
-      endpoints:
-        localhost:
-          address: tcp://:7981
-      services:
-        swarm_virtualbox:
-          libstorage:
-            storage:
-              driver: virtualbox
+libstorage:
+  host: tcp://127.0.0.1:7981
+  embedded: false
+  server:
+    endpoints:
+      localhost:
+        address: tcp://:7981
+    services:
+      swarm_virtualbox:
+        libstorage:
+          storage:
+            driver: virtualbox
 virtualbox:
   endpoint: http://10.0.2.2:18083
   tls: false
@@ -60,8 +60,8 @@ rexray:
       spec:     /etc/docker/plugins/virtualbox.spec
       libstorage:
         service: swarm_virtualbox
-  libstorage:
-    host: tcp://$POLLY_IP:7981
+libstorage:
+  host: tcp://$POLLY_IP:7981
 ```
 
 ## Firewall port openings

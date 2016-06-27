@@ -10,14 +10,16 @@ import (
 	gofig "github.com/akutz/gofig"
 
 	"bytes"
+
 	"github.com/akutz/goof"
 	apitypes "github.com/emccode/libstorage/api/types"
+
+	"strings"
 
 	"github.com/emccode/polly/core"
 	lsclient "github.com/emccode/polly/core/libstorage/client"
 	"github.com/emccode/polly/core/types"
 	"github.com/stretchr/testify/assert"
-	"strings"
 )
 
 // This testing package is against the libStorage client
@@ -31,21 +33,21 @@ polly:
     type: boltdb
     endpoints: /tmp/boltdb
     bucket: MyBoltDb_test
-  libstorage:
-    host: tcp://localhost:7981
-    client:
-      requestPath: client
-    server:
-      endpoints:
-        localhost:
-          address: tcp://localhost:7981
-      services:
-        vfs:
-          libstorage:
-            driver: vfs
-        vfs2:
-          libstorage:
-            driver: vfs
+libstorage:
+  host: tcp://localhost:7981
+  client:
+    requestPath: client
+  server:
+    endpoints:
+      localhost:
+        address: tcp://localhost:7981
+    services:
+      vfs:
+        libstorage:
+          driver: vfs
+      vfs2:
+        libstorage:
+          driver: vfs
 `
 
 func TestMain(m *testing.M) {
