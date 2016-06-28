@@ -148,13 +148,13 @@ $write_polly_config_node0 = <<SCRIPT
 mkdir -p #{File.dirname($polly_cfg).shellescape}
 cat << EOF > #{$polly_cfg.shellescape}
 polly:
-  host: tcp://:7978
+  host: tcp://127.0.0.1:7978
   store:
     type: boltdb
     endpoints: /tmp/boltdb
     bucket: MyBoltDb_test
 libstorage:
-  host:     tcp://:7981
+  host:     tcp://127.0.0.1:7981
   embedded: false
   service:  virtualbox
   server:
@@ -270,6 +270,38 @@ Vagrant.configure("2") do |config|
          s.inline = $build_go_bindata
        end
 
+       # build polly
+       node.vm.provision "shell" do |s|
+         s.name   = "build polly"
+         s.env    = $build_env_vars
+         s.inline = $build_polly
+       end
+
+       # copy polly to /usr/bin
+       node.vm.provision "shell" do |s|
+         s.name   = "copy polly"
+         s.inline = "cp #{$gopath.shellescape}/bin/polly " +
+                    "#{$polly_bin.shellescape}"
+       end
+
+       # write polly config file
+       node.vm.provision "shell" do |s|
+         s.name       = "config polly"
+         s.inline     = $write_polly_config_node0
+       end
+
+       # install polly
+       node.vm.provision "shell" do |s|
+         s.name   = "polly install"
+         s.inline = "polly install"
+       end
+
+       # start polly as a service
+       node.vm.provision "shell" do |s|
+         s.name   = "start polly"
+         s.inline = "/etc/init.d/polly start"
+       end
+
       # build rex-ray
       node.vm.provision "shell" do |s|
         s.name   = "build rex-ray"
@@ -300,38 +332,6 @@ Vagrant.configure("2") do |config|
       node.vm.provision "shell" do |s|
         s.name   = "start rex-ray"
         s.inline = "/etc/init.d/rexray start"
-      end
-
-      # build polly
-      node.vm.provision "shell" do |s|
-        s.name   = "build polly"
-        s.env    = $build_env_vars
-        s.inline = $build_polly
-      end
-
-      # copy polly to /usr/bin
-      node.vm.provision "shell" do |s|
-        s.name   = "copy polly"
-        s.inline = "cp #{$gopath.shellescape}/bin/polly " +
-                   "#{$polly_bin.shellescape}"
-      end
-
-      # write polly config file
-      node.vm.provision "shell" do |s|
-        s.name       = "config polly"
-        s.inline     = $write_polly_config_node0
-      end
-
-      # install polly
-      node.vm.provision "shell" do |s|
-        s.name   = "polly install"
-        s.inline = "polly install"
-      end
-
-      # start polly as a service
-      node.vm.provision "shell" do |s|
-        s.name   = "start polly"
-        s.inline = "/etc/init.d/polly start"
       end
 
     end # if is_first_up node.vm.hostname
