@@ -213,7 +213,7 @@ func (c *CLI) Execute() {
 		case error:
 			log.Panic(r)
 		default:
-			log.Debugf("exiting with default error code 1, r=%v", r)
+			log.Debugf("exiting1 with default error code 1, r=%v", r)
 			os.Exit(1)
 		}
 	}()
@@ -228,8 +228,10 @@ func (c *CLI) execute() {
 			case helpFlagPanic, subCommandPanic:
 			// Do nothing
 			case printedErrorPanic:
+				log.Panic(r)
 				os.Exit(1)
 			default:
+				log.Debugf("exiting2 with default error code 1, r=%v", r)
 				panic(r)
 			}
 		}
