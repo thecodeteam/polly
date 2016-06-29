@@ -39,11 +39,14 @@ func (c *Client) httpDo(
 	c.logResponse(res)
 
 	if res.StatusCode > 299 {
-		httpErr, err := goof.DecodeHTTPError(res.Body)
+		errByte, err := ioutil.ReadAll(io.LimitReader(res.Body, 1048576))
+		var errStr string
 		if err != nil {
-			return res, goof.WithField("status", res.StatusCode, "http error")
+			errStr = "Failed to interpret HTTP Body for specific error message"
+		} else {
+			errStr = string(errByte)
 		}
-		return res, httpErr
+		return res, goof.WithField("status", res.StatusCode, errStr)
 	}
 
 	if req.Method != http.MethodHead && reply != nil {
