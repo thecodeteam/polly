@@ -185,6 +185,42 @@ SCRIPT
 #SCRIPT
 # POLLY IN A REMOTE MODE IS CURRENTLY NOT SUPPORTED, UNCOMMENT WHEN IT IS
 
+#write the MOTD to help users get started
+$motd_file = "/etc/motd"
+
+$write_motd_config = <<SCRIPT
+mkdir -p #{File.dirname($motd_file).shellescape}
+cat << EOF > #{$motd_file.shellescape}
+
+----------------------------------------------
+This host is running:
+polly @ /usr/bin/polly
+rexray @ /usr/bin/rexray
+
+Sample commands for REX-Ray (can run on node0 or node1):
+----------------------------------------------
+Create a volume:
+rexray volume create --volumename=node0vol --size=1
+
+List volumes:
+rexray volume
+
+
+Sample commands for Polly (run on node0 only + must sudo su):
+----------------------------------------------
+Create a volume:
+polly volume create --servicename=virtualbox --name=pollyvol --size=1
+
+List volumes:
+polly volume ls
+
+Delete volume:
+polly volume remove --volumeid=<Volume UUID>
+----------------------------------------------
+
+EOF
+SCRIPT
+
 # init the environment variables used when building go source
 $build_env_vars = Hash[
     "GOPATH" => $gopath.shellescape,
@@ -334,6 +370,12 @@ Vagrant.configure("2") do |config|
         s.inline = "/etc/init.d/rexray start"
       end
 
+      # write MOTD
+      node.vm.provision "shell" do |s|
+        s.name   = "write MOTD"
+        s.inline = $write_motd_config
+      end
+
     end # if is_first_up node.vm.hostname
 
     # list volume mapping with rex-ray to verify configuration
@@ -432,6 +474,12 @@ Vagrant.configure("2") do |config|
       #  s.inline = "/etc/init.d/polly start"
       #end
       # POLLY IN A REMOTE MODE IS CURRENTLY NOT SUPPORTED, UNCOMMENT WHEN IT IS
+
+      # write MOTD
+      node.vm.provision "shell" do |s|
+        s.name   = "write MOTD"
+        s.inline = $write_motd_config
+      end
 
     end # if is_first_up node.vm.hostname
 
