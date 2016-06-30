@@ -52,7 +52,7 @@ To be able to offer persistent storage in a scalable way, the application and co
 ## libStorage
 Polly makes use of the open source storage plugin framework [libStorage](https://github.com/emccode/libstorage) to enable storage orchestrator tools and container runtimes to make requests of storage. Any storage platform that has a driver implementation for the libStorage framework will work with Polly.
 
-### Hello Polly
+## Hello Polly
 In the grand tradition of technical documentation, the first true end-to-end
 example of Polly is called `Hello Polly`. It showcases a two-node
 deployment with the first node configured with REX-Ray talking to a
@@ -66,7 +66,7 @@ The below example does have a few requirements:
  * Vagrant 1.8+
  * Ruby 2.0+
 
-#### Start Polly Vagrant Environment
+### Start Polly Vagrant Environment
 Before bringing the Vagrant environment online, please ensure it is
 accomplished in a clean directory:
 
@@ -210,13 +210,13 @@ Finally, exit the SSH session to `node1`:
 vagrant@node1:~$ exit
 ```
 
-#### Cleaning Up
+### Cleaning Up
 Be sure to kill the VirtualBox web server with a quick `killall vboxwebsrv` and
 to tear down the Vagrant environment with `vagrant destroy -f`. Omitting these
 commands will leave the web service and REX-Ray/Polly Vagrant nodes online and
 consume additional system resources.
 
-#### Congratulations
+### Congratulations
 REX-Ray with the use of Polly on the backend has been used to provide
 persistence for stateless containers!
 
