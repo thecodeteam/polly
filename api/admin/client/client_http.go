@@ -39,11 +39,23 @@ func (c *Client) httpDo(
 	c.logResponse(res)
 
 	if res.StatusCode > 299 {
-		httpErr, err := goof.DecodeHTTPError(res.Body)
+		//TODO: this is a hack. we need to revisit this at some point
+		//the commented code below should deserialize an object but currently
+		//the body contains just a string of the error message
+		/*
+			httpErr, err := goof.DecodeHTTPError(res.Body)
+			if err != nil {
+				return res, goof.WithField("status", res.StatusCode, "http error")
+			}
+		*/
+
+		buf, err := ioutil.ReadAll(res.Body)
 		if err != nil {
-			return res, goof.WithField("status", res.StatusCode, "http error")
+			return res, goof.WithField("status", res.StatusCode,
+				"Failed to retrieve HTTP body message")
 		}
-		return res, httpErr
+		result := string(buf)
+		return res, goof.WithField("status", res.StatusCode, result)
 	}
 
 	if req.Method != http.MethodHead && reply != nil {
