@@ -14,6 +14,12 @@ if ARGV[0] == "up"
   end
 end
 
+$default_install = "stable"
+if ENV['DEPLOY_TYPE']
+  $default_install = ENV['DEPLOY_TYPE']
+  printf("Changing the deploy type to %s\n", $default_install)
+end
+
 # node info
 $node0_name = "node0"
 $node0_ip   = "192.168.56.10"
@@ -81,6 +87,11 @@ $rexray_ref = "master"
 $rexray_bin = "/usr/bin/rexray"
 $rexray_cfg = "/etc/rexray/config.yml"
 
+if $default_install == "custom" && ENV['REXRAY_REF']
+  $rexray_ref = ENV['REXRAY_REF']
+  printf("Changing the REX-Ray checkout ref to %s\n", $rexray_ref)
+end
+
 # the script to build rex-ray
 $build_rexray = <<SCRIPT
 mkdir -p #{$rexray_dir.shellescape}
@@ -97,6 +108,11 @@ $polly_url = "https://github.com/emccode/polly"
 $polly_ref = "master"
 $polly_bin = "/usr/bin/polly"
 $polly_cfg = "/etc/polly/config.yml"
+
+if $default_install == "custom" && ENV['POLLY_REF']
+  $polly_ref = ENV['POLLY_REF']
+  printf("Changing the Polly checkout ref to %s\n", $polly_ref)
+end
 
 # the script to build polly
 $build_polly = <<SCRIPT
@@ -293,37 +309,77 @@ Vagrant.configure("2") do |config|
         s.inline = $provision_docker
       end
 
-      # provision golang
-      node.vm.provision "shell" do |s|
-        s.name   = "golang"
-        s.inline = $provision_golang
+      #on the non-stable version of polly and rexray, we need to install
+      #and build each component
+      if $default_install != "stable" && $default_install != "staged" && $default_install != "unstable"
+
+        # provision golang
+        node.vm.provision "shell" do |s|
+          s.name   = "golang"
+          s.inline = $provision_golang
+        end
+
+         # build go-bindata
+         node.vm.provision "shell" do |s|
+           s.name   = "go-bindata"
+           s.env    = $build_env_vars
+           s.inline = $build_go_bindata
+         end
+
+         # build polly
+         node.vm.provision "shell" do |s|
+           s.name   = "build polly"
+           s.env    = $build_env_vars
+           s.inline = $build_polly
+         end
+
+         # copy polly to /usr/bin
+         node.vm.provision "shell" do |s|
+           s.name   = "copy polly"
+           s.inline = "cp #{$gopath.shellescape}/bin/polly " +
+                      "#{$polly_bin.shellescape}"
+         end
+
+         # build rex-ray
+         node.vm.provision "shell" do |s|
+           s.name   = "build rex-ray"
+           s.env    = $build_env_vars
+           s.inline = $build_rexray
+         end
+
+         # copy rex-ray to /usr/bin
+         node.vm.provision "shell" do |s|
+           s.name   = "copy rex-ray"
+           s.inline = "cp #{$gopath.shellescape}/bin/rexray " +
+                      "#{$rexray_bin.shellescape}"
+         end
+
+      else
+
+        # install polly
+        node.vm.provision "shell" do |s|
+          s.name       = "install polly"
+          s.inline     = "curl -sSL https://dl.bintray.com/emccode/polly/install | sh -s #{$default_install}"
+        end
+
+        # install rexray
+        node.vm.provision "shell" do |s|
+          s.name       = "install rexray"
+          s.inline     = "curl -sSL https://dl.bintray.com/emccode/rexray/install | sh -s #{$default_install}"
+        end
+
       end
-
-       # build go-bindata
-       node.vm.provision "shell" do |s|
-         s.name   = "go-bindata"
-         s.env    = $build_env_vars
-         s.inline = $build_go_bindata
-       end
-
-       # build polly
-       node.vm.provision "shell" do |s|
-         s.name   = "build polly"
-         s.env    = $build_env_vars
-         s.inline = $build_polly
-       end
-
-       # copy polly to /usr/bin
-       node.vm.provision "shell" do |s|
-         s.name   = "copy polly"
-         s.inline = "cp #{$gopath.shellescape}/bin/polly " +
-                    "#{$polly_bin.shellescape}"
-       end
 
        # write polly config file
        node.vm.provision "shell" do |s|
          s.name       = "config polly"
          s.inline     = $write_polly_config_node0
+       end
+
+       # write rex-ray config file
+       node.vm.provision "shell" do |s|
+         s.name       = "config rex-ray"
+         s.inline     = $write_rexray_config_node0
        end
 
        # install polly
@@ -332,37 +388,17 @@ Vagrant.configure("2") do |config|
          s.inline = "polly install"
        end
 
+       # install rex-ray
+       node.vm.provision "shell" do |s|
+         s.name   = "rex-ray install"
+         s.inline = "rexray install"
+       end
+
        # start polly as a service
        node.vm.provision "shell" do |s|
          s.name   = "start polly"
          s.inline = "/etc/init.d/polly start"
        end
-
-      # build rex-ray
-      node.vm.provision "shell" do |s|
-        s.name   = "build rex-ray"
-        s.env    = $build_env_vars
-        s.inline = $build_rexray
-      end
-
-      # copy rex-ray to /usr/bin
-      node.vm.provision "shell" do |s|
-        s.name   = "copy rex-ray"
-        s.inline = "cp #{$gopath.shellescape}/bin/rexray " +
-                   "#{$rexray_bin.shellescape}"
-      end
-
-      # write rex-ray config file
-      node.vm.provision "shell" do |s|
-        s.name       = "config rex-ray"
-        s.inline     = $write_rexray_config_node0
-      end
-
-      # install rex-ray
-      node.vm.provision "shell" do |s|
-        s.name   = "rex-ray install"
-        s.inline = "rexray install"
-      end
 
       # start rex-ray as a service
       node.vm.provision "shell" do |s|
@@ -417,14 +453,45 @@ Vagrant.configure("2") do |config|
                         destination: '"$HOME"/.ssh' +
                                      "/#{$node0_name.shellescape}.key"
 
-      # scp rex-ray from node0 to node1
-      node.vm.provision "shell" do |s|
-        s.name =   "scp rexray"
-        s.inline = "scp -q -i " +
-                   "/home/vagrant/.ssh/#{$node0_name}.key".shellescape + " " +
-                   "-o StrictHostKeyChecking=no " +
-                   "vagrant@#{$node0_ip}:#{$rexray_bin.shellescape} " +
-                   "#{$rexray_bin.shellescape}"
+      #on the non-stable version of polly and rexray, we need to install
+      #and build each component
+      if $default_install != "stable" && $default_install != "staged" && $default_install != "unstable"
+
+        # scp rex-ray from node0 to node1
+        node.vm.provision "shell" do |s|
+          s.name =   "scp rexray"
+          s.inline = "scp -q -i " +
+                     "/home/vagrant/.ssh/#{$node0_name}.key".shellescape + " " +
+                     "-o StrictHostKeyChecking=no " +
+                     "vagrant@#{$node0_ip}:#{$rexray_bin.shellescape} " +
+                     "#{$rexray_bin.shellescape}"
+        end
+
+        # POLLY IN A REMOTE MODE IS CURRENTLY NOT SUPPORTED, UNCOMMENT WHEN IT IS
+        # scp polly from node0 to node1
+        #node.vm.provision "shell" do |s|
+        #  s.name =   "scp polly"
+        #  s.inline = "scp -q -i " +
+        #              "/home/vagrant/.ssh/#{$node0_name}.key".shellescape + " " +
+        #              "-o StrictHostKeyChecking=no " +
+        #              "vagrant@#{$node0_ip}:#{$polly_bin.shellescape} " +
+        #              "#{$polly_bin.shellescape}"
+        #end
+
+      else
+
+        # install polly
+        node.vm.provision "shell" do |s|
+          s.name       = "install polly"
+          s.inline     = "curl -sSL https://dl.bintray.com/emccode/polly/install | sh -s #{$default_install}"
+        end
+
+        # install rexray
+        node.vm.provision "shell" do |s|
+          s.name       = "install rexray"
+          s.inline     = "curl -sSL https://dl.bintray.com/emccode/rexray/install | sh -s #{$default_install}"
+        end
+
       end
 
       # write rex-ray config file
@@ -433,11 +500,25 @@ Vagrant.configure("2") do |config|
         s.inline     = $write_rexray_config_node1
       end
 
+      # POLLY IN A REMOTE MODE IS CURRENTLY NOT SUPPORTED, UNCOMMENT WHEN IT IS
+      # write polly config file
+      #node.vm.provision "shell" do |s|
+      #  s.name       = "config polly"
+      #  s.inline     = $write_polly_config_node1
+      #end
+
       # install rex-ray
       node.vm.provision "shell" do |s|
         s.name   = "rex-ray install"
         s.inline = "rexray install"
       end
+
+      # POLLY IN A REMOTE MODE IS CURRENTLY NOT SUPPORTED, UNCOMMENT WHEN IT IS
+      # install polly
+      #node.vm.provision "shell" do |s|
+      #  s.name   = "polly install"
+      #  s.inline = "polly install"
+      #end
 
       # start rex-ray as a service
       node.vm.provision "shell" do |s|
@@ -446,28 +527,6 @@ Vagrant.configure("2") do |config|
       end
 
       # POLLY IN A REMOTE MODE IS CURRENTLY NOT SUPPORTED, UNCOMMENT WHEN IT IS
-      # scp polly from node0 to node1
-      #node.vm.provision "shell" do |s|
-      #  s.name =   "scp polly"
-      #  s.inline = "scp -q -i " +
-      #              "/home/vagrant/.ssh/#{$node0_name}.key".shellescape + " " +
-      #              "-o StrictHostKeyChecking=no " +
-      #              "vagrant@#{$node0_ip}:#{$polly_bin.shellescape} " +
-      #              "#{$polly_bin.shellescape}"
-      #end
-
-      # write polly config file
-      #node.vm.provision "shell" do |s|
-      #  s.name       = "config polly"
-      #  s.inline     = $write_polly_config_node1
-      #end
-
-      # install polly
-      #node.vm.provision "shell" do |s|
-      #  s.name   = "polly install"
-      #  s.inline = "polly install"
-      #end
-
       # start polly as a service
       #node.vm.provision "shell" do |s|
       #  s.name   = "start polly"
