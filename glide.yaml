@@ -5,7 +5,7 @@ import:
     repo:    https://github.com/akutz/logrus
 
   - package: github.com/emccode/libstorage
-    ref:     0f1dbf524ff78d8690255ec6a44fc2d0aa802df1
+    ref:     969b72fa6a3cc7c12a5da662998b1bb719793f7c
     vcs:     git
     repo:    https://github.com/dvonthenen/libstorage
 
