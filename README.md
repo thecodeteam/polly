@@ -1,7 +1,7 @@
 # polly - Polymorphic Volume Scheduling
 [![Build Status](https://travis-ci.org/emccode/polly.svg?branch=master)](https://travis-ci.org/emccode/polly)
-[![Go Report Card](http://goreportcard.com/badge/emccode/polly)](http://goreportcard.com/report/emccode/polly) [![codecov.io](https://codecov.io/github/emccode/polly/coverage.svg?branch=master)](https://codecov.io/github/emccode/polly?branch=master) [![Download](http://api.bintray.com/packages/emccode/polly/stable/images/download.svg)](https://dl.bintray.com/emccode/polly/)
-[![Download](http://api.bintray.com/packages/emccode/polly/staged/images/download.svg)](https://dl.bintray.com/emccode/polly/) [![Docs](https://readthedocs.org/projects/polly-scheduler/badge/?version=latest)](http://polly-scheduler.readthedocs.io/en/latest/?badge=latest)
+[![Go Report Card](https://goreportcard.com/badge/emccode/polly)](https://goreportcard.com/report/emccode/polly) [![codecov.io](https://codecov.io/github/emccode/polly/coverage.svg?branch=master)](https://codecov.io/github/emccode/polly?branch=master) [![Download](https://api.bintray.com/packages/emccode/polly/stable/images/download.svg)](https://dl.bintray.com/emccode/polly/)
+[![Download](https://api.bintray.com/packages/emccode/polly/staged/images/download.svg)](https://dl.bintray.com/emccode/polly/) [![Docs](https://readthedocs.org/projects/polly-scheduler/badge/?version=latest)](https://polly-scheduler.readthedocs.io/en/latest/?badge=latest)
 
 ![polly](https://raw.githubusercontent.com/emccode/polly/master/.docs/images/polly.png)
 
