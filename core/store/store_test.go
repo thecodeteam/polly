@@ -2,10 +2,11 @@ package store
 
 import (
 	"bytes"
+	"os"
+	"strconv"
+	"testing"
 
 	log "github.com/Sirupsen/logrus"
-	"os"
-	"testing"
 
 	gofig "github.com/akutz/gofig"
 	lstypes "github.com/emccode/libstorage/api/types"
@@ -15,12 +16,25 @@ import (
 )
 
 const (
-	libStorageConfigBaseBolt = `
+	libStorageConfigBaseTestBolt = `
 polly:
   store:
     type: boltdb
-    endpoints: /tmp/boltdb
+    endpoints: /tmp/boltdb-test
     bucket: MyBoltDb_test
+  server:
+    services:
+      vfs:
+        libstorage:
+          storage:
+            driver: vfs
+`
+	libStorageConfigBaseBenchBolt = `
+polly:
+  store:
+    type: boltdb
+    endpoints: /tmp/boltdb-bench
+    bucket: MyBoltDb_bench
   server:
     services:
       vfs:
@@ -47,14 +61,17 @@ func newVolume(service, volumeID string) *types.Volume {
 }
 
 func TestMain(m *testing.M) {
-	log.SetLevel(log.DebugLevel)
+	log.SetLevel(log.ErrorLevel)
 	os.Setenv("POLLY_DEBUG", "true")
 	config := gofig.New()
 
-	configYamlBuf := []byte(libStorageConfigBaseBolt)
+	configYamlBuf := []byte(libStorageConfigBaseTestBolt)
 	if err := config.ReadConfig(bytes.NewReader(configYamlBuf)); err != nil {
 		panic(err)
 	}
+
+	os.Remove("/tmp/boltdb-test")
+	os.Remove("/tmp/boltdb-bench")
 
 	var err error
 	ps, err = NewWithConfig(config)
@@ -62,16 +79,10 @@ func TestMain(m *testing.M) {
 		log.WithError(err).Fatal("Failed to create PollyStore")
 	}
 
-	vol := newVolume("pollytestpkg1", "testid1")
-	_ = ps.RemoveVolumeMetadata(vol)
-
-	if err := ps.EraseStore(); err != nil {
-		log.Fatal("Could not clear polly store")
-	}
-
 	m.Run()
 }
 
+//Testing
 func TestGenerateRootKey(t *testing.T) {
 	key, err := ps.GenerateRootKey(VolumeInternalLabelsType)
 	assert.NoError(t, err)
@@ -230,7 +241,7 @@ func TestRemoveVolumeMetadata(t *testing.T) {
 func TestEraseStore(t *testing.T) {
 	myConfig := gofig.New()
 
-	configYamlBuf := []byte(libStorageConfigBaseBolt)
+	configYamlBuf := []byte(libStorageConfigBaseTestBolt)
 	if err := myConfig.ReadConfig(bytes.NewReader(configYamlBuf)); err != nil {
 		panic(err)
 	}
@@ -256,4 +267,148 @@ func TestEraseStore(t *testing.T) {
 	}
 
 	assert.Len(t, ids, 0)
+}
+
+//Benchmarks
+func BenchmarkGetVolumeIDNotExist(b *testing.B) {
+	myConfig := gofig.New()
+
+	configYamlBuf := []byte(libStorageConfigBaseBenchBolt)
+	if err := myConfig.ReadConfig(bytes.NewReader(configYamlBuf)); err != nil {
+		log.WithError(err).Fatal("Failed to create PollyStore")
+	}
+
+	psBench, err := NewWithConfig(myConfig.Scope("polly.store"))
+	if err != nil {
+		log.Fatal("Failed to create PollyStore")
+	}
+
+	err = psBench.EraseStore()
+	if err != nil {
+		log.WithError(err).Fatal("Failed to reset PollyStore")
+	}
+
+	volume := newVolume("pollytestpkg2", "testiddoesntexist")
+
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			psBench.Exists(volume)
+		}
+	})
+}
+
+func BenchmarkGetVolumeIDs(b *testing.B) {
+	myConfig := gofig.New()
+
+	configYamlBuf := []byte(libStorageConfigBaseBenchBolt)
+	if err := myConfig.ReadConfig(bytes.NewReader(configYamlBuf)); err != nil {
+		log.WithError(err).Fatal("Failed to create PollyStore")
+	}
+
+	psBench, err := NewWithConfig(myConfig.Scope("polly.store"))
+	if err != nil {
+		log.Fatal("Failed to create PollyStore")
+	}
+
+	err = psBench.EraseStore()
+	if err != nil {
+		log.WithError(err).Fatal("Failed to reset PollyStore")
+	}
+
+	volume := newVolume("pollytestpkg1", "testid1")
+
+	err = psBench.SaveVolumeMetadata(volume)
+	if err != nil {
+		log.WithError(err).Fatal("Failed to SaveVolumeMetadata")
+	}
+
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			psBench.GetVolumeIds()
+		}
+	})
+}
+
+func BenchmarkNewVolumeMetadata(b *testing.B) {
+	myConfig := gofig.New()
+
+	configYamlBuf := []byte(libStorageConfigBaseBenchBolt)
+	if err := myConfig.ReadConfig(bytes.NewReader(configYamlBuf)); err != nil {
+		log.WithError(err).Fatal("Failed to create PollyStore")
+	}
+
+	psBench, err := NewWithConfig(myConfig.Scope("polly.store"))
+	if err != nil {
+		log.Fatal("Failed to create PollyStore")
+	}
+
+	err = psBench.EraseStore()
+	if err != nil {
+		log.WithError(err).Fatal("Failed to reset PollyStore")
+	}
+
+	volume := newVolume("pollytestpkg1", "testid1")
+	volume.Schedulers = []string{"testScheduler"}
+
+	err = psBench.SaveVolumeMetadata(volume)
+	if err != nil {
+		log.WithError(err).Fatal("Failed to SaveVolumeMetadata")
+	}
+
+	volume = newVolume("pollytestpkg1", "testid1")
+	_, err = psBench.SetVolumeMetadata(volume)
+	if err != nil {
+		log.WithError(err).Fatal("Failed to SaveVolumeMetadata")
+	}
+
+	volume.Labels = make(map[string]string)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		volume.Labels["testkey"+strconv.Itoa(i)] = "testval"
+		psBench.SaveVolumeMetadata(volume)
+	}
+}
+
+func BenchmarkUpdateVolumeMetadata(b *testing.B) {
+	myConfig := gofig.New()
+
+	configYamlBuf := []byte(libStorageConfigBaseBenchBolt)
+	if err := myConfig.ReadConfig(bytes.NewReader(configYamlBuf)); err != nil {
+		log.WithError(err).Fatal("Failed to create PollyStore")
+	}
+
+	psBench, err := NewWithConfig(myConfig.Scope("polly.store"))
+	if err != nil {
+		log.Fatal("Failed to create PollyStore")
+	}
+
+	err = psBench.EraseStore()
+	if err != nil {
+		log.WithError(err).Fatal("Failed to reset PollyStore")
+	}
+
+	volume := newVolume("pollytestpkg1", "testid1")
+	volume.Schedulers = []string{"testScheduler"}
+
+	err = psBench.SaveVolumeMetadata(volume)
+	if err != nil {
+		log.WithError(err).Fatal("Failed to SaveVolumeMetadata")
+	}
+
+	volume = newVolume("pollytestpkg1", "testid1")
+	_, err = psBench.SetVolumeMetadata(volume)
+	if err != nil {
+		log.WithError(err).Fatal("Failed to SaveVolumeMetadata")
+	}
+
+	volume.Labels = make(map[string]string)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		volume.Labels["testkey1"] = "testval" + strconv.Itoa(i)
+		psBench.SaveVolumeMetadata(volume)
+	}
 }
