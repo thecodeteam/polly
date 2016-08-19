@@ -17,6 +17,9 @@ import:
     version: v0.1.0
   - package: github.com/akutz/golf
     ref:     v0.1.1
+  - package: github.com/akutz/go-bindata
+    ref:     feature/md5checksum
+    vcs:     git
 
   - package: github.com/docker/libkv
   - package: github.com/boltdb/bolt
